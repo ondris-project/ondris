@@ -1,9 +1,9 @@
-/// Cible maximale (= difficulté 1) : 2^256 - 1.
+/// Maximum target (= difficulty 1): 2^256 - 1.
 pub const MAX_TARGET: [u8; 32] = [0xff; 32];
 
-/// Convertit une difficulté (nombre simple, pas de format compact type
-/// Bitcoin nBits — volontairement plus simple pour limiter les risques de
-/// bug dans une implémentation de référence) en cible 256 bits big-endian :
+/// Converts a difficulty (a plain number, not a Bitcoin-style nBits
+/// compact format — intentionally simpler to limit the risk of bugs in a
+/// reference implementation) into a big-endian 256-bit target:
 /// `target = MAX_TARGET / difficulty`.
 pub fn target_for_difficulty(difficulty: u64) -> [u8; 32] {
     let difficulty = difficulty.max(1);
@@ -21,9 +21,9 @@ fn divide_be_by_u64(num: [u8; 32], divisor: u64) -> [u8; 32] {
     result
 }
 
-/// Réajuste la difficulté en fonction du temps réellement observé sur la
-/// fenêtre de blocs par rapport au temps cible, avec un facteur de
-/// correction borné à [1/4x, 4x] pour éviter les à-coups violents.
+/// Retargets difficulty based on the time actually observed over the
+/// block window versus the target time, with a correction factor clamped
+/// to [1/4x, 4x] to avoid violent swings.
 pub fn next_difficulty(
     prev_difficulty: u64,
     actual_timespan_secs: u64,
@@ -57,8 +57,8 @@ mod tests {
 
     #[test]
     fn faster_blocks_increase_difficulty() {
-        // Les blocs sont arrivés plus vite que prévu -> la difficulté doit monter.
-        let d = next_difficulty(1000, 15, 30, 60); // 60 blocs en 15s au lieu de 30s visé... trop vite
+        // Blocks arrived faster than expected -> difficulty must go up.
+        let d = next_difficulty(1000, 15, 30, 60); // 60 blocks in 15s instead of the targeted 30s... too fast
         assert!(d > 1000);
     }
 

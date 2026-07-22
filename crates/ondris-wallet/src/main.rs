@@ -9,7 +9,7 @@ use std::path::PathBuf;
 #[command(
     name = "ondris-wallet",
     version,
-    about = "Wallet CLI pour Ondris (testnet)"
+    about = "CLI wallet for Ondris (testnet)"
 )]
 struct Args {
     #[command(subcommand)]
@@ -18,36 +18,36 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Crée un nouveau wallet chiffré.
+    /// Creates a new encrypted wallet.
     New {
         #[arg(long)]
         out: PathBuf,
-        /// Si omis, le mot de passe est demandé de façon interactive.
+        /// If omitted, the password is prompted for interactively.
         #[arg(long)]
         password: Option<String>,
     },
-    /// Affiche l'adresse d'un wallet existant (pas besoin du mot de passe).
+    /// Shows an existing wallet's address (no password needed).
     Address {
         #[arg(long)]
         wallet: PathBuf,
     },
-    /// Interroge le node pour le solde et le nonce d'un wallet.
+    /// Queries the node for a wallet's balance and nonce.
     Balance {
         #[arg(long)]
         wallet: PathBuf,
         #[arg(long, default_value = "http://127.0.0.1:8080")]
         node: String,
     },
-    /// Signe et envoie une transaction via le node.
+    /// Signs and sends a transaction via the node.
     Send {
         #[arg(long)]
         wallet: PathBuf,
         #[arg(long)]
         password: Option<String>,
-        /// Adresse destinataire (ondr...).
+        /// Recipient address (ondr...).
         #[arg(long)]
         to: String,
-        /// Montant en plus petite unité (1 ONDR = 100_000_000 unités).
+        /// Amount in smallest units (1 ONDR = 100,000,000 units).
         #[arg(long)]
         amount: u64,
         #[arg(long, default_value_t = 0)]
@@ -60,7 +60,7 @@ enum Command {
 fn get_password(provided: Option<String>) -> anyhow::Result<String> {
     match provided {
         Some(p) => Ok(p),
-        None => Ok(rpassword::prompt_password("Mot de passe du wallet: ")?),
+        None => Ok(rpassword::prompt_password("Wallet password: ")?),
     }
 }
 
@@ -86,13 +86,13 @@ fn main() -> anyhow::Result<()> {
             let password = get_password(password)?;
             anyhow::ensure!(
                 password.len() >= 8,
-                "le mot de passe doit faire au moins 8 caractères"
+                "the password must be at least 8 characters long"
             );
             let (ks, keypair) = keystore::create(&password)?;
             keystore::save(&out, &ks)?;
-            println!("Wallet créé : {}", out.display());
-            println!("Adresse     : {}", keypair.address());
-            println!("⚠ Sauvegarde ce fichier ET ton mot de passe : sans les deux, les fonds sont perdus.");
+            println!("Wallet created: {}", out.display());
+            println!("Address       : {}", keypair.address());
+            println!("⚠ Back up this file AND your password: without both, the funds are lost.");
         }
         Command::Address { wallet } => {
             let ks = keystore::load(&wallet)?;
@@ -102,9 +102,9 @@ fn main() -> anyhow::Result<()> {
             let ks = keystore::load(&wallet)?;
             let client = reqwest::blocking::Client::new();
             let info = fetch_account(&client, &node, &ks.address)?;
-            println!("Adresse : {}", info.address);
-            println!("Solde   : {} (plus petite unité)", info.balance);
-            println!("Nonce   : {}", info.nonce);
+            println!("Address: {}", info.address);
+            println!("Balance: {} (smallest unit)", info.balance);
+            println!("Nonce  : {}", info.nonce);
         }
         Command::Send {
             wallet,
@@ -132,7 +132,7 @@ fn main() -> anyhow::Result<()> {
                 .send()?
                 .error_for_status()?
                 .json()?;
-            println!("Transaction envoyée : {}", resp.tx_hash);
+            println!("Transaction sent: {}", resp.tx_hash);
         }
     }
 

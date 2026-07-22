@@ -1,76 +1,73 @@
 # Architecture
 
-## Vue d'ensemble
+## Overview
 
 ```
 ┌─────────────┐      HTTP JSON       ┌──────────────┐
 │ ondris-wallet│ ───────────────────▶│              │
 └─────────────┘                      │              │
-                                      │  ondris-node │◀──── TCP gossip ────▶ autres nodes
+                                      │  ondris-node │◀──── TCP gossip ────▶ other nodes
 ┌─────────────┐      HTTP JSON       │  (chain +    │
 │ ondris-miner │ ───────────────────▶│   network +  │
 └─────────────┘                      │   RPC)       │
                                       └──────┬───────┘
-                                             │ sled (embarqué)
+                                             │ sled (embedded)
                                              ▼
-                                        disque local
+                                        local disk
 ```
 
-Crates :
+Crates:
 
-- **ondris-primitives** — `Hash256`, `Address`, `KeyPair`/`PublicKey`/`Signature` (Ed25519). Aucune dépendance sur le reste du projet.
-- **ondris-pow** — l'algorithme OndrisHash. Dépend uniquement de `ondris-primitives`.
-- **ondris-core** — `BlockHeader`, `Transaction`, `Block`, `ChainState` (persistance sled), `Chain` (validation + application), difficulté, genesis, DTOs RPC partagés.
-- **ondris-network** — gossip P2P TCP, ne connaît que les types de `ondris-core` pour les messages.
-- **ondris-node** — binaire : assemble chain + network + serveur HTTP (axum).
-- **ondris-miner** — binaire : client RPC qui récupère du travail, mine en local (CPU, multi-thread), soumet le bloc trouvé.
-- **ondris-wallet** — binaire : keystore chiffré + client RPC pour solde/envoi de transaction.
+- **ondris-primitives** — `Hash256`, `Address`, `KeyPair`/`PublicKey`/`Signature` (Ed25519). No dependency on the rest of the project.
+- **ondris-pow** — the OndrisHash algorithm. Depends only on `ondris-primitives`.
+- **ondris-core** — `BlockHeader`, `Transaction`, `Block`, `ChainState` (sled persistence), `Chain` (validation + application), difficulty, genesis, shared RPC DTOs.
+- **ondris-network** — TCP P2P gossip, only aware of `ondris-core` types for messages.
+- **ondris-node** — binary: wires up chain + network + HTTP server (axum).
+- **ondris-miner** — binary: RPC client that fetches work, mines locally (CPU, multi-threaded), submits the found block.
+- **ondris-wallet** — binary: encrypted keystore + RPC client for balance/sending transactions.
 
-## Pourquoi un modèle de compte plutôt qu'un modèle UTXO
+## Why an account model instead of a UTXO model
 
-Plus simple à raisonner et à implémenter correctement dans le temps
-disponible (un solde + un nonce par adresse, comme Ethereum), au prix d'une
-parallélisation de la validation des transactions un peu moins naturelle
-qu'un modèle UTXO. Pour un testnet, ce compromis est le bon.
+Simpler to reason about and to implement correctly in the time available
+(a balance + a nonce per address, like Ethereum), at the cost of
+transaction validation being slightly less naturally parallelizable than a
+UTXO model. For a testnet, this trade-off is the right one.
 
-## Pourquoi la difficulté n'est pas au format "compact bits" façon Bitcoin
+## Why difficulty isn't stored as Bitcoin-style "compact bits"
 
-Le format nBits de Bitcoin (exposant + mantisse sur 32 bits) a des cas
-limites délicats (bit de signe, arrondis) qui sont une source classique de
-bugs si ré-implémentés à la main. Ondris stocke la difficulté comme un
-simple entier `u64` et calcule la cible via `MAX_TARGET / difficulty`
-(division 256 bits par un u64, implémentée directement). C'est strictement
-équivalent en expressivité pour nos besoins, avec une implémentation plus
-simple à auditer.
+Bitcoin's nBits format (32-bit exponent + mantissa) has tricky edge cases
+(sign bit, rounding) that are a classic source of bugs when re-implemented
+by hand. Ondris stores difficulty as a plain `u64` integer and computes the
+target via `MAX_TARGET / difficulty` (256-bit division by a u64,
+implemented directly). This is strictly equivalent in expressiveness for
+our needs, with an implementation that's simpler to audit.
 
-## Comment le mineur régénère le dataset sans le télécharger
+## How the miner regenerates the dataset without downloading it
 
-Le dataset PoW (plusieurs dizaines de Mio) n'est jamais transféré sur le
-réseau. `GET /work` renvoie le hash du bloc de bordure d'époque
-(`epoch_boundary_hash`) ; le mineur calcule localement le seed d'époque
-(`ondris_pow::epoch_seed`) et régénère le dataset lui-même — exactement
-comme un mineur Ethash régénère son DAG à partir d'un seed léger. Chaque
-node fait de même pour vérifier un bloc reçu.
+The PoW dataset (tens of MB) is never transferred over the network.
+`GET /work` returns the hash of the epoch boundary block
+(`epoch_boundary_hash`); the miner locally computes the epoch seed
+(`ondris_pow::epoch_seed`) and regenerates the dataset itself — exactly
+like an Ethash miner regenerates its DAG from a lightweight seed. Every
+node does the same to verify a received block.
 
-## Limitations connues (travail futur, pas encore fait)
+## Known limitations (future work, not done yet)
 
-- **Pas de gestion de fork/réorganisation** : `Chain::submit_block`
-  n'accepte que l'extension linéaire du tip courant. Si deux mineurs
-  trouvent un bloc en même temps, un des deux sera simplement rejeté par le
-  reste du réseau plutôt que de déclencher une vraie réorganisation vers la
-  chaîne la plus lourde. Nécessaire avant tout testnet avec plusieurs
-  mineurs actifs simultanément.
-- **Mempool minimaliste** : `GET /work` vide le mempool à chaque appel ; si
-  le bloc résultant n'est jamais soumis (mineur qui plante, redémarre...),
-  les transactions qu'il contenait sont perdues et doivent être renvoyées
-  par le wallet. Pas de re-file d'attente automatique.
-- **Transport P2P en clair, sans authentification** : suffisant pour un
-  testnet fermé, pas pour un réseau public avec de la valeur réelle.
-- **Pas de découverte de pairs (DHT)** : liste de seed nodes statique fournie
-  en config.
-- **Vérification "full" du PoW seulement** : chaque node garde le dataset
-  complet de l'époque courante en RAM. Un mode "light client" (régénération
-  à la volée des seuls indices nécessaires depuis le cache) n'est pas
-  implémenté.
-- **Couche "calcul utile"** évoquée en conception : pas implémentée, research-grade.
-- **Aucun audit cryptographique indépendant.**
+- **No fork/reorg handling**: `Chain::submit_block` only accepts a linear
+  extension of the current tip. If two miners find a block at the same
+  time, one of them will simply be rejected by the rest of the network
+  instead of triggering a real reorganization toward the heavier chain.
+  Needed before any testnet with multiple active miners at once.
+- **Minimal mempool**: `GET /work` drains the mempool on every call; if the
+  resulting block is never submitted (miner crashes, restarts...), the
+  transactions it contained are lost and must be resent by the wallet. No
+  automatic re-queuing.
+- **Unencrypted, unauthenticated P2P transport**: fine for a closed
+  testnet, not for a public network with real value at stake.
+- **No peer discovery (DHT)**: static seed node list provided in config.
+- **"Full" PoW verification only**: every node keeps the full dataset for
+  the current epoch in RAM. A "light client" mode (on-the-fly regeneration
+  of only the needed indices from the cache) is not implemented.
+- **"Useful compute" layer** discussed during design: not implemented,
+  research-grade.
+- **No independent cryptographic audit.**

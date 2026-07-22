@@ -1,10 +1,9 @@
-//! Réseau P2P minimal pour Ondris : gossip de blocs/transactions sur TCP
-//! avec des messages JSON préfixés par leur longueur. Pas de découverte de
-//! pairs automatique (DHT) dans cette première version : la liste de pairs
-//! (seed nodes) est fournie en config au démarrage du node. Documenté comme
-//! travail futur : découverte de pairs, gestion de fork/réorganisation de
-//! chaîne, chiffrement du transport (aujourd'hui en clair, adapté à un
-//! testnet mais pas à un mainnet avec de la valeur réelle).
+//! Minimal P2P network for Ondris: block/transaction gossip over TCP with
+//! length-prefixed JSON messages. No automatic peer discovery (DHT) in
+//! this first version: the peer list (seed nodes) is supplied via config
+//! at node startup. Documented as future work: peer discovery, chain
+//! fork/reorg handling, transport encryption (currently plaintext, fine
+//! for a testnet but not for a mainnet with real value at stake).
 
 use ondris_core::{Block, Transaction};
 use serde::{Deserialize, Serialize};
@@ -63,10 +62,11 @@ impl Network {
         self.my_height.store(height, Ordering::Relaxed);
     }
 
-    /// Démarre l'écoute entrante sur `addr` (tâche de fond, ne bloque pas).
+    /// Starts listening for inbound connections on `addr` (background
+    /// task, does not block).
     pub async fn listen(&self, addr: SocketAddr) -> anyhow::Result<()> {
         let listener = TcpListener::bind(addr).await?;
-        tracing::info!("réseau P2P en écoute sur {addr}");
+        tracing::info!("P2P network listening on {addr}");
         let this = self.clone();
         tokio::spawn(async move {
             loop {
@@ -75,24 +75,24 @@ impl Network {
                         let this2 = this.clone();
                         tokio::spawn(async move {
                             if let Err(e) = this2.handle_connection(stream, peer_addr).await {
-                                tracing::warn!("connexion entrante {peer_addr} terminée: {e}");
+                                tracing::warn!("inbound connection {peer_addr} closed: {e}");
                             }
                         });
                     }
-                    Err(e) => tracing::warn!("erreur accept(): {e}"),
+                    Err(e) => tracing::warn!("accept() error: {e}"),
                 }
             }
         });
         Ok(())
     }
 
-    /// Ouvre une connexion sortante vers un pair (seed node de config).
+    /// Opens an outbound connection to a peer (config seed node).
     pub async fn connect(&self, addr: SocketAddr) -> anyhow::Result<()> {
         let stream = TcpStream::connect(addr).await?;
         let this = self.clone();
         tokio::spawn(async move {
             if let Err(e) = this.handle_connection(stream, addr).await {
-                tracing::warn!("connexion sortante vers {addr} terminée: {e}");
+                tracing::warn!("outbound connection to {addr} closed: {e}");
             }
         });
         Ok(())
@@ -131,7 +131,7 @@ impl Network {
                     Message::Handshake { network, .. } => {
                         anyhow::ensure!(
                             network == self.network_name,
-                            "réseau différent: {network}"
+                            "different network: {network}"
                         );
                     }
                     Message::NewBlock(block) => {
@@ -189,7 +189,7 @@ async fn read_message<R: AsyncRead + Unpin>(reader: &mut R) -> anyhow::Result<Me
     let len = u32::from_be_bytes(len_buf) as usize;
     anyhow::ensure!(
         len <= 64 * 1024 * 1024,
-        "message reçu trop grand ({len} octets)"
+        "received message too large ({len} bytes)"
     );
     let mut buf = vec![0u8; len];
     reader.read_exact(&mut buf).await?;

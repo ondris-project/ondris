@@ -1,7 +1,7 @@
-//! Node de référence Ondris : chaîne + réseau P2P + API RPC HTTP.
-//! Testnet uniquement — voir docs/ARCHITECTURE.md pour les limitations
-//! connues (pas de gestion de fork, transport P2P non chiffré, mempool
-//! minimaliste sans re-file d'attente en cas de bloc non soumis).
+//! Ondris reference node: chain + P2P network + HTTP RPC API.
+//! Testnet only — see docs/ARCHITECTURE.md for known limitations (no fork
+//! handling, unencrypted P2P transport, minimal mempool with no
+//! re-queuing if a block is never submitted).
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -24,26 +24,26 @@ use tokio::sync::mpsc;
 #[command(
     name = "ondris-node",
     version,
-    about = "Node de référence Ondris (testnet)"
+    about = "Ondris reference node (testnet)"
 )]
 struct Args {
-    /// Dossier de données (base sled + config).
+    /// Data directory (sled database + config).
     #[arg(long, default_value = "./ondris-data")]
     data_dir: PathBuf,
 
-    /// Adresse d'écoute pour le réseau P2P.
+    /// Listen address for the P2P network.
     #[arg(long, default_value = "0.0.0.0:30303")]
     p2p_addr: SocketAddr,
 
-    /// Adresse d'écoute pour l'API RPC HTTP.
+    /// Listen address for the HTTP RPC API.
     #[arg(long, default_value = "127.0.0.1:8080")]
     rpc_addr: SocketAddr,
 
-    /// Fichier de config genesis JSON (sinon, config testnet par défaut).
+    /// JSON genesis config file (otherwise, the default testnet config is used).
     #[arg(long)]
     genesis: Option<PathBuf>,
 
-    /// Pairs (seed nodes) auxquels se connecter au démarrage. Répétable.
+    /// Peers (seed nodes) to connect to at startup. Repeatable.
     #[arg(long = "peer")]
     peers: Vec<SocketAddr>,
 }
@@ -84,9 +84,7 @@ async fn main() -> anyhow::Result<()> {
     let genesis = match &args.genesis {
         Some(path) => GenesisConfig::load(path)?,
         None => {
-            tracing::warn!(
-                "aucun fichier --genesis fourni : utilisation de la config testnet par défaut"
-            );
+            tracing::warn!("no --genesis file provided: using the default testnet config");
             GenesisConfig::testnet_default()
         }
     };
@@ -96,9 +94,9 @@ async fn main() -> anyhow::Result<()> {
     let (start_height, _) = chain
         .state
         .tip()?
-        .expect("le genesis doit être initialisé à l'ouverture");
+        .expect("genesis must be initialized on open");
     tracing::info!(
-        "chaîne '{}' ouverte à la hauteur {start_height}",
+        "chain '{}' opened at height {start_height}",
         genesis.network_name
     );
 
@@ -109,7 +107,7 @@ async fn main() -> anyhow::Result<()> {
 
     for peer in &args.peers {
         if let Err(e) = network.connect(*peer).await {
-            tracing::warn!("impossible de se connecter au pair {peer}: {e}");
+            tracing::warn!("could not connect to peer {peer}: {e}");
         }
     }
 
@@ -127,11 +125,11 @@ async fn main() -> anyhow::Result<()> {
                     let height = block.header.height;
                     match event_state.chain.submit_block(block.clone()) {
                         Ok(hash) => {
-                            tracing::info!("bloc {height} accepté depuis le réseau ({hash})");
+                            tracing::info!("block {height} accepted from the network ({hash})");
                             event_state.network.set_height(height);
                             event_state.network.broadcast(Message::NewBlock(block)).await;
                         }
-                        Err(e) => tracing::debug!("bloc reçu du réseau rejeté (probablement déjà connu ou hors-ordre): {e}"),
+                        Err(e) => tracing::debug!("block received from the network rejected (likely already known or out of order): {e}"),
                     }
                 }
                 NetworkEvent::NewTransaction(tx) => {
@@ -143,8 +141,8 @@ async fn main() -> anyhow::Result<()> {
                             .await;
                     }
                 }
-                NetworkEvent::PeerConnected(addr) => tracing::info!("pair connecté: {addr}"),
-                NetworkEvent::PeerDisconnected(addr) => tracing::info!("pair déconnecté: {addr}"),
+                NetworkEvent::PeerConnected(addr) => tracing::info!("peer connected: {addr}"),
+                NetworkEvent::PeerDisconnected(addr) => tracing::info!("peer disconnected: {addr}"),
             }
         }
     });
@@ -158,7 +156,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/tx/submit", post(submit_tx))
         .with_state(state);
 
-    tracing::info!("API RPC en écoute sur http://{}", args.rpc_addr);
+    tracing::info!("RPC API listening on http://{}", args.rpc_addr);
     let listener = tokio::net::TcpListener::bind(args.rpc_addr).await?;
     axum::serve(listener, app).await?;
 
@@ -170,7 +168,7 @@ async fn chain_info(State(state): State<SharedState>) -> Result<Json<ChainInfo>,
         .chain
         .state
         .tip()?
-        .ok_or_else(|| anyhow::anyhow!("chaîne non initialisée"))?;
+        .ok_or_else(|| anyhow::anyhow!("chain not initialized"))?;
     let next_difficulty = state.chain.compute_next_difficulty(height + 1)?;
     let peer_count = state.network.peer_count().await;
     Ok(Json(ChainInfo {
@@ -199,7 +197,7 @@ async fn get_block_by_height(
         .chain
         .state
         .get_block_by_height(height)?
-        .ok_or_else(|| anyhow::anyhow!("bloc {height} introuvable"))?;
+        .ok_or_else(|| anyhow::anyhow!("block {height} not found"))?;
     Ok(Json(block))
 }
 
@@ -258,7 +256,7 @@ async fn submit_tx(
     Json(tx): Json<Transaction>,
 ) -> Result<Json<SubmitTxResponse>, AppError> {
     if !tx.is_signature_valid() {
-        return Err(anyhow::anyhow!("signature invalide").into());
+        return Err(anyhow::anyhow!("invalid signature").into());
     }
     let hash = tx.hash();
     state.mempool.lock().unwrap().push(tx.clone());

@@ -14,8 +14,9 @@ pub struct BlockHeader {
 }
 
 impl BlockHeader {
-    /// Sérialisation canonique de l'en-tête SANS le nonce : c'est le
-    /// `header_bytes` passé à `ondris_hash`, qui ajoute le nonce lui-même.
+    /// Canonical serialization of the header WITHOUT the nonce: this is
+    /// the `header_bytes` passed to `ondris_hash`, which appends the nonce
+    /// itself.
     pub fn bytes_for_pow(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(96);
         buf.extend_from_slice(&self.height.to_le_bytes());
@@ -27,8 +28,8 @@ impl BlockHeader {
         buf
     }
 
-    /// Le hash PoW de cet en-tête sert aussi d'identifiant de bloc (comme
-    /// Bitcoin : block hash = hash de l'en-tête qui satisfait la cible).
+    /// This header's PoW hash also serves as the block identifier (like
+    /// Bitcoin: block hash = the header hash that satisfies the target).
     pub fn id(&self, dataset: &Dataset) -> Hash256 {
         ondris_pow::ondris_hash(&self.bytes_for_pow(), self.nonce, dataset)
     }

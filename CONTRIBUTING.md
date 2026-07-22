@@ -1,18 +1,18 @@
-# Contribuer à Ondris
+# Contributing to Ondris
 
-Projet testnet en développement actif — l'architecture peut encore changer.
+Actively developed testnet project — the architecture may still change.
 
-## Avant de proposer une modification
+## Before proposing a change
 
-- `cargo build --workspace` et `cargo test --workspace` doivent passer.
-- `cargo fmt --all` et `cargo clippy --workspace -- -D warnings` sont
-  attendus propres.
-- Toute modification de `ondris-pow` (l'algorithme lui-même) doit être
-  discutée dans une issue avant la PR : c'est la partie la plus sensible du
-  projet et elle nécessitera un audit avant tout lancement réel.
+- `cargo build --workspace` and `cargo test --workspace` must pass.
+- `cargo fmt --all` and `cargo clippy --workspace -- -D warnings` are
+  expected to be clean.
+- Any change to `ondris-pow` (the algorithm itself) must be discussed in an
+  issue before the PR: it's the most sensitive part of the project and will
+  require an audit before any real launch.
 
-## Zones qui ont particulièrement besoin d'aide
+## Areas that especially need help
 
-Voir la liste des limitations connues dans
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — gestion des forks, mineur
-GPU, mode de vérification "light client", découverte de pairs.
+See the list of known limitations in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — fork handling, GPU miner,
+"light client" verification mode, peer discovery.

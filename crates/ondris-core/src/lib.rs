@@ -1,8 +1,7 @@
-//! Cœur de la blockchain Ondris : en-têtes de bloc, transactions, état des
-//! comptes, difficulté, et la struct `Chain` qui orchestre tout ça.
-//! S'appuie sur `ondris-pow` pour le calcul/la vérification du
-//! Proof-of-Work et sur `ondris-primitives` pour les types cryptographiques
-//! de base.
+//! Core of the Ondris blockchain: block headers, transactions, account
+//! state, difficulty, and the `Chain` struct that orchestrates all of it.
+//! Relies on `ondris-pow` for computing/verifying Proof-of-Work and on
+//! `ondris-primitives` for base cryptographic types.
 
 pub mod block;
 pub mod chain;
@@ -33,9 +32,9 @@ mod integration_tests {
     mod tempfile_shim {
         use std::path::{Path, PathBuf};
 
-        /// Mini remplaçant de `tempfile::TempDir` pour ne pas ajouter de
-        /// dépendance de test supplémentaire : crée un dossier unique sous
-        /// le dossier temp système et le supprime au Drop.
+        /// Tiny stand-in for `tempfile::TempDir` so we don't need an extra
+        /// test dependency: creates a unique directory under the system
+        /// temp dir and removes it on Drop.
         pub struct TempDir(PathBuf);
 
         impl TempDir {
@@ -44,7 +43,7 @@ mod integration_tests {
                 let unique = format!("{prefix}-{:?}", std::thread::current().id());
                 path.push(unique);
                 let _ = std::fs::remove_dir_all(&path);
-                std::fs::create_dir_all(&path).expect("création du dossier temporaire");
+                std::fs::create_dir_all(&path).expect("failed to create temp directory");
                 TempDir(path)
             }
 
@@ -63,8 +62,8 @@ mod integration_tests {
     fn test_genesis() -> GenesisConfig {
         let mut g = GenesisConfig::testnet_default();
         g.retarget_window = 4;
-        // Difficulté volontairement minuscule pour que le test mine un
-        // bloc réel en quelques itérations plutôt qu'en plusieurs secondes.
+        // Deliberately tiny difficulty so the test mines a real block in
+        // a handful of iterations rather than several seconds.
         g.initial_difficulty = 2;
         g
     }
@@ -86,7 +85,7 @@ mod integration_tests {
 
         let (mut block, dataset) = chain.work_template(miner_addr, vec![]).unwrap();
 
-        // Mine réellement : incrémente le nonce jusqu'à satisfaire la cible.
+        // Actually mine: increment the nonce until it satisfies the target.
         let target = target_for_difficulty(block.header.difficulty);
         loop {
             let hash = block.header.id(&dataset);
@@ -111,7 +110,7 @@ mod integration_tests {
         let chain = Chain::open(dir.path(), test_genesis()).unwrap();
         let miner_addr = KeyPair::generate().address();
         let (mut block, _dataset) = chain.work_template(miner_addr, vec![]).unwrap();
-        block.header.prev_hash = ondris_primitives::Hash256::hash(b"pas le bon prev_hash");
+        block.header.prev_hash = ondris_primitives::Hash256::hash(b"not the right prev_hash");
         let result = chain.submit_block(block);
         assert!(result.is_err());
     }

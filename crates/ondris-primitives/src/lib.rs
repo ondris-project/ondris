@@ -1,6 +1,6 @@
-//! Types de base partagés par tout le projet Ondris : hash 256 bits,
-//! adresses, paires de clés et signatures. Aucune primitive cryptographique
-//! maison ici : BLAKE3 pour le hachage, Ed25519 pour les signatures.
+//! Base types shared across the whole Ondris project: 256-bit hashes,
+//! addresses, key pairs and signatures. No homemade cryptographic
+//! primitive here: BLAKE3 for hashing, Ed25519 for signatures.
 
 use ed25519_dalek::{Signature as DalekSignature, Signer, SigningKey, Verifier, VerifyingKey};
 use rand::rngs::OsRng;
@@ -10,9 +10,9 @@ use std::fmt;
 
 pub const ADDRESS_PREFIX: &str = "ondr";
 
-/// Hash 256 bits (sortie BLAKE3), utilisé pour les hash de bloc, de
-/// transaction, de racine de Merkle, etc. Sérialisé en hex (pas en tableau
-/// de nombres) pour que l'API JSON-RPC reste lisible/utilisable.
+/// 256-bit hash (BLAKE3 output), used for block hashes, transaction
+/// hashes, Merkle roots, etc. Serialized as hex (not as a number array) so
+/// the JSON-RPC API stays readable/usable.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Hash256(pub [u8; 32]);
 
@@ -40,8 +40,8 @@ impl Hash256 {
         &self.0
     }
 
-    /// Interprète le hash comme un entier 256 bits big-endian, pour la
-    /// comparaison avec la cible de difficulté.
+    /// Interprets the hash as a big-endian 256-bit integer, for comparison
+    /// against the difficulty target.
     pub fn to_u256_be(&self) -> [u8; 32] {
         self.0
     }
@@ -72,7 +72,7 @@ impl fmt::Display for Hash256 {
     }
 }
 
-/// Clé publique Ed25519. Sérialisée en hex, comme `Hash256`.
+/// Ed25519 public key. Serialized as hex, like `Hash256`.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PublicKey(pub [u8; 32]);
 
@@ -96,10 +96,7 @@ impl PublicKey {
 
     pub fn from_hex(s: &str) -> anyhow::Result<Self> {
         let bytes = hex::decode(s)?;
-        anyhow::ensure!(
-            bytes.len() == 32,
-            "clé publique invalide: longueur incorrecte"
-        );
+        anyhow::ensure!(bytes.len() == 32, "invalid public key: incorrect length");
         let mut arr = [0u8; 32];
         arr.copy_from_slice(&bytes);
         Ok(PublicKey(arr))
@@ -109,7 +106,7 @@ impl PublicKey {
         Ok(VerifyingKey::from_bytes(&self.0)?)
     }
 
-    /// Dérive l'adresse (20 octets = BLAKE3(pubkey)[..20]) associée à cette clé.
+    /// Derives the address (20 bytes = BLAKE3(pubkey)[..20]) associated with this key.
     pub fn to_address(&self) -> Address {
         let h = blake3::hash(&self.0);
         let mut addr = [0u8; 20];
@@ -134,9 +131,9 @@ impl fmt::Debug for PublicKey {
     }
 }
 
-/// Signature Ed25519 (64 octets). Sérialisée manuellement en hex : `serde`
-/// ne dérive `Serialize`/`Deserialize` nativement que pour des tableaux
-/// jusqu'à 32 éléments, donc [u8; 64] a besoin d'une implémentation dédiée.
+/// Ed25519 signature (64 bytes). Serialized by hand as hex: `serde` only
+/// derives `Serialize`/`Deserialize` natively for arrays up to 32
+/// elements, so [u8; 64] needs a dedicated implementation.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct Signature(pub [u8; 64]);
 
@@ -158,7 +155,7 @@ impl<'de> serde::Deserialize<'de> for Signature {
         let bytes = hex::decode(&s).map_err(serde::de::Error::custom)?;
         if bytes.len() != 64 {
             return Err(serde::de::Error::custom(
-                "longueur de signature invalide (attendu 64 octets)",
+                "invalid signature length (expected 64 bytes)",
             ));
         }
         let mut arr = [0u8; 64];
@@ -173,9 +170,9 @@ impl fmt::Debug for Signature {
     }
 }
 
-/// Adresse de compte : 20 octets dérivés de la clé publique, affichés avec
-/// le préfixe `ondr` + hexadécimal (pas de bech32 pour rester simple et
-/// sans dépendance externe supplémentaire à ce stade).
+/// Account address: 20 bytes derived from the public key, displayed with
+/// the `ondr` prefix + hex (no bech32, to keep things simple and avoid an
+/// extra external dependency at this stage).
 #[derive(Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Address(pub [u8; 20]);
 
@@ -199,7 +196,7 @@ impl Address {
 
     pub fn from_hex(s: &str) -> anyhow::Result<Self> {
         let bytes = hex::decode(s)?;
-        anyhow::ensure!(bytes.len() == 20, "adresse invalide: longueur incorrecte");
+        anyhow::ensure!(bytes.len() == 20, "invalid address: incorrect length");
         let mut arr = [0u8; 20];
         arr.copy_from_slice(&bytes);
         Ok(Address(arr))
@@ -227,8 +224,8 @@ impl std::str::FromStr for Address {
     }
 }
 
-/// Paire de clés Ed25519 en mémoire (non chiffrée). Le stockage chiffré sur
-/// disque est géré par `ondris-wallet`, pas ici.
+/// Ed25519 key pair held in memory (unencrypted). Encrypted on-disk
+/// storage is handled by `ondris-wallet`, not here.
 pub struct KeyPair {
     signing_key: SigningKey,
 }

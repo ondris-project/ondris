@@ -12,12 +12,12 @@ use std::time::{SystemTime, UNIX_EPOCH};
 pub fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .expect("l'horloge système est avant 1970")
+        .expect("system clock is before 1970")
         .as_secs()
 }
 
-/// Hash de bloc fixe pour le genesis : il n'est pas issu d'un vrai calcul
-/// de PoW (le genesis n'a pas de "bloc précédent" à miner par-dessus).
+/// Fixed block hash for genesis: it doesn't come from a real PoW
+/// computation (genesis has no "previous block" to mine on top of).
 fn genesis_block_hash(genesis: &GenesisConfig) -> Hash256 {
     Hash256::hash(
         format!(
@@ -81,8 +81,8 @@ impl Chain {
         }
     }
 
-    /// Dataset de l'époque contenant `height`, avec mise en cache mémoire
-    /// (le dataset ne change qu'une fois tous les `EPOCH_LENGTH` blocs).
+    /// Dataset for the epoch containing `height`, cached in memory (the
+    /// dataset only changes once every `EPOCH_LENGTH` blocks).
     pub fn dataset_for_height(&self, height: u64) -> anyhow::Result<Arc<Dataset>> {
         let epoch = ondris_pow::epoch_of(height);
         {
@@ -101,7 +101,7 @@ impl Chain {
                 self.state
                     .get_hash_by_height(boundary_height)?
                     .ok_or_else(|| {
-                        anyhow::anyhow!("bloc de bordure d'époque {boundary_height} introuvable")
+                        anyhow::anyhow!("epoch boundary block {boundary_height} not found")
                     })?;
             ondris_pow::epoch_seed(Some(boundary_hash))
         };
@@ -110,9 +110,9 @@ impl Chain {
         Ok(dataset)
     }
 
-    /// Construit un en-tête prêt à être miné (nonce à 0, à faire varier par
-    /// le mineur) pour le prochain bloc, ainsi que le dataset de l'époque
-    /// correspondante et la liste de transactions à inclure.
+    /// Builds a header ready to be mined (nonce at 0, to be varied by the
+    /// miner) for the next block, along with the matching epoch's dataset
+    /// and the list of transactions to include.
     pub fn work_template(
         &self,
         miner: Address,
@@ -121,7 +121,7 @@ impl Chain {
         let (height, prev_hash) = self
             .state
             .tip()?
-            .ok_or_else(|| anyhow::anyhow!("chaîne non initialisée"))?;
+            .ok_or_else(|| anyhow::anyhow!("chain not initialized"))?;
         let next_height = height + 1;
         let dataset = self.dataset_for_height(next_height)?;
         let difficulty = self.compute_next_difficulty(next_height)?;
@@ -153,11 +153,11 @@ impl Chain {
         let tip_block = self
             .state
             .get_block_by_height(next_height - 1)?
-            .ok_or_else(|| anyhow::anyhow!("bloc {} introuvable", next_height - 1))?;
+            .ok_or_else(|| anyhow::anyhow!("block {} not found", next_height - 1))?;
         let window_start_block = self
             .state
             .get_block_by_height(next_height - 1 - window)?
-            .ok_or_else(|| anyhow::anyhow!("bloc de début de fenêtre introuvable"))?;
+            .ok_or_else(|| anyhow::anyhow!("window start block not found"))?;
         let actual_timespan = tip_block
             .header
             .timestamp
@@ -170,55 +170,55 @@ impl Chain {
         ))
     }
 
-    /// Valide entièrement un bloc (PoW, lien avec le tip, transactions) et
-    /// l'applique à l'état si valide. N'accepte que l'extension linéaire du
-    /// tip courant (pas de gestion de fork/réorganisation dans cette
-    /// première version — documenté comme travail futur).
+    /// Fully validates a block (PoW, link to the tip, transactions) and
+    /// applies it to the state if valid. Only accepts a linear extension
+    /// of the current tip (no fork/reorg handling in this first version —
+    /// documented as future work).
     pub fn submit_block(&self, block: Block) -> anyhow::Result<Hash256> {
         let (tip_height, tip_hash) = self
             .state
             .tip()?
-            .ok_or_else(|| anyhow::anyhow!("chaîne non initialisée"))?;
+            .ok_or_else(|| anyhow::anyhow!("chain not initialized"))?;
 
         anyhow::ensure!(
             block.header.height == tip_height + 1,
-            "hauteur de bloc inattendue: reçu {}, attendu {}",
+            "unexpected block height: got {}, expected {}",
             block.header.height,
             tip_height + 1
         );
         anyhow::ensure!(
             block.header.prev_hash == tip_hash,
-            "prev_hash ne correspond pas au tip courant"
+            "prev_hash does not match the current tip"
         );
 
         let expected_tx_root = block.compute_tx_root();
-        anyhow::ensure!(block.header.tx_root == expected_tx_root, "tx_root invalide");
+        anyhow::ensure!(block.header.tx_root == expected_tx_root, "invalid tx_root");
 
         let dataset = self.dataset_for_height(block.header.height)?;
         let block_hash = block.header.id(&dataset);
         let target = target_for_difficulty(block.header.difficulty);
         anyhow::ensure!(
             ondris_pow::meets_target(&block_hash, &target),
-            "le PoW ne satisfait pas la cible de difficulté"
+            "PoW does not meet the difficulty target"
         );
 
         let expected_difficulty = self.compute_next_difficulty(block.header.height)?;
         anyhow::ensure!(
             block.header.difficulty == expected_difficulty,
-            "difficulté incorrecte pour cette hauteur"
+            "incorrect difficulty for this height"
         );
 
         for tx in &block.transactions {
-            anyhow::ensure!(tx.is_signature_valid(), "signature de transaction invalide");
+            anyhow::ensure!(tx.is_signature_valid(), "invalid transaction signature");
             let sender_addr = tx.from.to_address();
             let account = self.state.get_account(&sender_addr)?;
             anyhow::ensure!(
                 tx.account_nonce == account.nonce,
-                "nonce de transaction invalide (rejeu ?)"
+                "invalid transaction nonce (replay?)"
             );
             anyhow::ensure!(
                 account.balance >= tx.amount.saturating_add(tx.fee),
-                "solde insuffisant"
+                "insufficient balance"
             );
         }
 

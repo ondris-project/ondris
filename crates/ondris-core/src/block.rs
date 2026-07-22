@@ -9,8 +9,8 @@ pub struct Block {
     pub transactions: Vec<Transaction>,
 }
 
-/// Racine de Merkle simple (arbre binaire, duplication du dernier élément
-/// impair) sur les hashs de transaction.
+/// Simple Merkle root (binary tree, duplicating the last odd element) over
+/// transaction hashes.
 pub fn merkle_root(hashes: &[Hash256]) -> Hash256 {
     if hashes.is_empty() {
         return Hash256::ZERO;
@@ -55,9 +55,9 @@ mod tests {
 
     #[test]
     fn single_leaf_root_equals_the_leaf_itself() {
-        // Une seule feuille : la boucle de réduction ne s'exécute pas
-        // (elle ne s'exécute que tant qu'il reste >1 élément), donc la
-        // racine est directement ce hash-là, sans duplication.
+        // A single leaf: the reduction loop never runs (it only runs
+        // while more than 1 element remains), so the root is directly
+        // that hash, with no duplication.
         let h = Hash256::hash(b"tx1");
         assert_eq!(merkle_root(&[h]), h);
     }

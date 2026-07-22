@@ -7,8 +7,8 @@ pub struct Transaction {
     pub to: Address,
     pub amount: u64,
     pub fee: u64,
-    /// Nonce du compte émetteur, doit être strictement croissant (protection
-    /// contre le rejeu), pas lié au nonce de PoW du bloc.
+    /// Sender account's nonce, must be strictly increasing (replay
+    /// protection); unrelated to the block's PoW nonce.
     pub account_nonce: u64,
     pub signature: Option<Signature>,
 }
@@ -31,7 +31,7 @@ impl Transaction {
         }
     }
 
-    /// Octets signés : tout sauf la signature elle-même.
+    /// Signed bytes: everything except the signature itself.
     pub fn signing_bytes(&self) -> Vec<u8> {
         let mut buf = Vec::with_capacity(96);
         buf.extend_from_slice(&self.from.0);
@@ -46,7 +46,7 @@ impl Transaction {
         assert_eq!(
             keypair.public().0,
             self.from.0,
-            "la clé ne correspond pas à l'émetteur"
+            "key does not match the sender"
         );
         self.signature = Some(keypair.sign(&self.signing_bytes()));
     }
@@ -59,8 +59,7 @@ impl Transaction {
     }
 
     pub fn hash(&self) -> Hash256 {
-        let bytes = serde_json::to_vec(self)
-            .expect("la sérialisation d'une transaction ne peut pas échouer");
+        let bytes = serde_json::to_vec(self).expect("serializing a transaction cannot fail");
         Hash256::hash(&bytes)
     }
 }

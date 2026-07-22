@@ -1,36 +1,36 @@
-//! OndrisHash : algorithme de Proof-of-Work memory-hard, GPU-friendly,
-//! résistant aux ASIC. Voir `docs/ALGORITHM.md` à la racine du dépôt pour
-//! la spec complète et les avertissements sur le statut non audité.
+//! OndrisHash: a memory-hard, GPU-friendly, ASIC-resistant Proof-of-Work
+//! algorithm. See `docs/ALGORITHM.md` at the repo root for the full spec
+//! and warnings about its unaudited status.
 //!
-//! Ne combine que des primitives déjà auditées (BLAKE3) dans une
-//! architecture originale : dataset régénéré par époque + scratchpad
-//! mélangé de façon dépendante des données déjà écrites.
+//! Only combines already-audited primitives (BLAKE3) in an original
+//! architecture: a dataset regenerated per epoch + a scratchpad mixed in a
+//! way that depends on data already written.
 
 use ondris_primitives::Hash256;
 use rand::{RngCore, SeedableRng};
 use rand_xoshiro::Xoshiro256StarStar;
 
-/// Hauteur de bloc sur laquelle un nouveau dataset est généré.
+/// Block height interval at which a new dataset is generated.
 pub const EPOCH_LENGTH: u64 = 2048;
-/// Taille du cache compact dont dérive le dataset complet.
+/// Size of the compact cache the full dataset is derived from.
 pub const CACHE_SIZE: usize = 16 * 1024 * 1024;
-/// Taille du dataset complet utilisé pour le mixing (valeur testnet réduite
-/// pour des cycles de dev/test rapides ; à revoir avec un audit et des
-/// benchmarks GPU réels avant tout lancement mainnet — viser 2-4 Gio).
+/// Size of the full dataset used for mixing (reduced testnet value for
+/// fast dev/test cycles; to be revisited with an audit and real GPU
+/// benchmarks before any mainnet launch — target 2-4 GiB).
 pub const DATASET_SIZE: usize = 64 * 1024 * 1024;
-/// Taille de la mémoire de travail par tentative de hash.
+/// Size of the working memory per hash attempt.
 pub const SCRATCHPAD_SIZE: usize = 2 * 1024 * 1024;
-/// Nombre de tours de mixing dépendant des données.
+/// Number of data-dependent mixing rounds.
 pub const MIX_ROUNDS: usize = 8;
-/// Taille d'un item de dataset/scratchpad (= taille de sortie BLAKE3).
+/// Size of one dataset/scratchpad item (= BLAKE3 output size).
 pub const ITEM_SIZE: usize = 32;
 
 pub fn epoch_of(height: u64) -> u64 {
     height / EPOCH_LENGTH
 }
 
-/// Dérive le seed d'une époque à partir du hash du bloc de bordure
-/// (ou d'une constante fixe pour l'époque 0 / genesis).
+/// Derives an epoch's seed from the hash of its boundary block (or a fixed
+/// constant for epoch 0 / genesis).
 pub fn epoch_seed(boundary_block_hash: Option<Hash256>) -> Hash256 {
     match boundary_block_hash {
         None => Hash256::hash(b"ONDRIS_GENESIS_EPOCH"),
@@ -45,8 +45,8 @@ fn xof_fill(seed: &[u8], out: &mut [u8]) {
     reader.fill(out);
 }
 
-/// Dataset complet d'une époque, dérivé de son seed. Généré une fois par
-/// époque (`EPOCH_LENGTH` blocs) et gardé en mémoire par les mineurs.
+/// Full dataset for one epoch, derived from its seed. Generated once per
+/// epoch (`EPOCH_LENGTH` blocks) and kept in memory by miners.
 pub struct Dataset {
     pub epoch: u64,
     bytes: Vec<u8>,
@@ -57,9 +57,8 @@ impl Dataset {
         Self::generate_with_sizes(epoch, seed, CACHE_SIZE, DATASET_SIZE)
     }
 
-    /// Variante paramétrable en taille, utilisée par les tests pour rester
-    /// rapide (les tailles "réelles" ci-dessus sont trop lourdes en boucle
-    /// de test unitaire).
+    /// Size-parameterized variant, used by tests to stay fast (the "real"
+    /// sizes above are too heavy for a unit test loop).
     pub fn generate_with_sizes(
         epoch: u64,
         seed: Hash256,
@@ -98,14 +97,14 @@ impl Dataset {
     }
 }
 
-/// Calcule OndrisHash(header || nonce) en utilisant le dataset de l'époque
-/// courante. `header_bytes` doit être la sérialisation canonique de
-/// l'en-tête de bloc SANS le nonce (le nonce est ajouté ici).
+/// Computes OndrisHash(header || nonce) using the current epoch's dataset.
+/// `header_bytes` must be the canonical serialization of the block header
+/// WITHOUT the nonce (the nonce is appended here).
 pub fn ondris_hash(header_bytes: &[u8], nonce: u64, dataset: &Dataset) -> Hash256 {
     ondris_hash_with_sizes(header_bytes, nonce, dataset, SCRATCHPAD_SIZE, MIX_ROUNDS)
 }
 
-/// Variante paramétrable, utilisée par les tests pour rester rapides.
+/// Size-parameterized variant, used by tests to stay fast.
 pub fn ondris_hash_with_sizes(
     header_bytes: &[u8],
     nonce: u64,
@@ -123,9 +122,8 @@ pub fn ondris_hash_with_sizes(
     let n_blocks = (scratchpad_size / ITEM_SIZE).max(1);
     let mut scratchpad = vec![0u8; n_blocks * ITEM_SIZE];
 
-    // Initialisation : on peuple le scratchpad avec des tranches du
-    // dataset choisies pseudo-aléatoirement. C'est ici que la largeur de
-    // bande passante mémoire est requise.
+    // Init: populate the scratchpad with pseudo-randomly chosen slices of
+    // the dataset. This is where memory bandwidth width is required.
     for b in 0..n_blocks {
         let idx = rng.next_u64();
         let d = dataset.item(idx);
@@ -135,9 +133,9 @@ pub fn ondris_hash_with_sizes(
         }
     }
 
-    // Mixing : rounds dépendants des données déjà écrites dans le
-    // scratchpad, ce qui empêche de paralléliser tous les rounds à
-    // l'avance sans mémoire suffisante pour tenir l'état intermédiaire.
+    // Mixing: rounds that depend on data already written into the
+    // scratchpad, which prevents parallelizing all rounds ahead of time
+    // without enough memory to hold the intermediate state.
     for _round in 0..mix_rounds {
         for b in 0..n_blocks {
             let dep_idx = (rng.next_u64() as usize) % n_blocks;
@@ -148,7 +146,7 @@ pub fn ondris_hash_with_sizes(
             hasher.update(&scratchpad[off..off + ITEM_SIZE]);
             let dep_copy: [u8; ITEM_SIZE] = scratchpad[dep_off..dep_off + ITEM_SIZE]
                 .try_into()
-                .expect("slice de taille ITEM_SIZE");
+                .expect("slice of size ITEM_SIZE");
             hasher.update(&dep_copy);
             let out = *hasher.finalize().as_bytes();
 
@@ -159,8 +157,8 @@ pub fn ondris_hash_with_sizes(
     Hash256::hash(&scratchpad)
 }
 
-/// Vérifie qu'un hash respecte une cible de difficulté (comparaison en
-/// big-endian, comme un nBits Bitcoin une fois décompacté).
+/// Checks that a hash meets a difficulty target (big-endian comparison,
+/// like a decompacted Bitcoin nBits).
 pub fn meets_target(hash: &Hash256, target_be: &[u8; 32]) -> bool {
     hash.to_u256_be() <= *target_be
 }

@@ -1,8 +1,7 @@
-//! Mineur CPU de référence pour Ondris. Sert à valider les règles de
-//! consensus et à tester le réseau ; ce n'est PAS un mineur GPU optimisé.
-//! Un kernel OpenCL/CUDA reprenant la même logique (dataset partagé,
-//! accès mémoire parallèles) est le travail suivant documenté dans
-//! docs/ALGORITHM.md.
+//! Reference CPU miner for Ondris. Used to validate consensus rules and
+//! test the network; this is NOT an optimized GPU miner. An OpenCL/CUDA
+//! kernel reusing the same logic (shared dataset, parallel memory access)
+//! is the next piece of work documented in docs/ALGORITHM.md.
 
 use clap::Parser;
 use ondris_core::{Block, WorkTemplate};
@@ -16,17 +15,17 @@ use std::time::{Duration, Instant};
 #[command(
     name = "ondris-miner",
     version,
-    about = "Mineur CPU de référence pour Ondris (testnet)"
+    about = "Reference CPU miner for Ondris (testnet)"
 )]
 struct Args {
     #[arg(long, default_value = "http://127.0.0.1:8080")]
     node: String,
 
-    /// Adresse (ondr...) qui recevra la récompense de bloc.
+    /// Address (ondr...) that will receive the block reward.
     #[arg(long)]
     address: String,
 
-    /// Nombre de threads de minage (par défaut : tous les cœurs disponibles).
+    /// Number of mining threads (defaults to all available cores).
     #[arg(long)]
     threads: Option<usize>,
 }
@@ -35,7 +34,7 @@ fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
 
-    // Valide le format de l'adresse tout de suite pour échouer vite si elle est incorrecte.
+    // Validate the address format right away to fail fast if it's wrong.
     let _validated: Address = args.address.parse()?;
 
     let threads = args.threads.unwrap_or_else(|| {
@@ -46,7 +45,7 @@ fn main() -> anyhow::Result<()> {
     let client = reqwest::blocking::Client::new();
 
     tracing::info!(
-        "mineur Ondris démarré : {threads} thread(s), node={}",
+        "Ondris miner started: {threads} thread(s), node={}",
         args.node
     );
 
@@ -60,7 +59,7 @@ fn main() -> anyhow::Result<()> {
         {
             Ok(resp) => resp.json()?,
             Err(e) => {
-                tracing::warn!("impossible de récupérer du travail depuis le node ({e}), nouvelle tentative dans 5s");
+                tracing::warn!("could not fetch work from the node ({e}), retrying in 5s");
                 std::thread::sleep(Duration::from_secs(5));
                 continue;
             }
@@ -70,7 +69,7 @@ fn main() -> anyhow::Result<()> {
             Some((epoch, ds)) if *epoch == work.epoch => ds.clone(),
             _ => {
                 tracing::info!(
-                    "génération du dataset local pour l'époque {} ({} Mio)...",
+                    "generating local dataset for epoch {} ({} MiB)...",
                     work.epoch,
                     ondris_pow::DATASET_SIZE / (1024 * 1024)
                 );
@@ -82,7 +81,7 @@ fn main() -> anyhow::Result<()> {
         };
 
         tracing::info!(
-            "minage du bloc {} (difficulté {})",
+            "mining block {} (difficulty {})",
             work.block.header.height,
             work.block.header.difficulty
         );
@@ -95,19 +94,19 @@ fn main() -> anyhow::Result<()> {
             .send()
         {
             Ok(resp) if resp.status().is_success() => {
-                tracing::info!("bloc {} soumis avec succès !", mined.header.height);
+                tracing::info!("block {} submitted successfully!", mined.header.height);
             }
             Ok(resp) => {
                 let body = resp.text().unwrap_or_default();
-                tracing::warn!("bloc rejeté par le node: {body}");
+                tracing::warn!("block rejected by the node: {body}");
             }
-            Err(e) => tracing::warn!("échec d'envoi du bloc au node: {e}"),
+            Err(e) => tracing::warn!("failed to send block to the node: {e}"),
         }
     }
 }
 
-/// Cherche un nonce satisfaisant `target` en répartissant l'espace des
-/// nonces entre `threads` threads (thread i essaie i, i+threads, i+2*threads, ...).
+/// Searches for a nonce satisfying `target` by splitting the nonce space
+/// across `threads` threads (thread i tries i, i+threads, i+2*threads, ...).
 fn mine_block(mut block: Block, target: [u8; 32], dataset: Arc<Dataset>, threads: usize) -> Block {
     let header_bytes = block.header.bytes_for_pow();
     let found = Arc::new(AtomicBool::new(false));
@@ -154,7 +153,7 @@ fn mine_block(mut block: Block, target: [u8; 32], dataset: Arc<Dataset>, threads
         .lock()
         .unwrap()
         .take()
-        .expect("un thread doit avoir trouvé un nonce");
+        .expect("a thread must have found a nonce");
     block.header.nonce = nonce;
     block
 }

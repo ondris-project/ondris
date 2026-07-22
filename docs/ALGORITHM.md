@@ -1,134 +1,133 @@
-# OndrisHash — Algorithme de Proof-of-Work
+# OndrisHash — Proof-of-Work Algorithm
 
-## Statut
+## Status
 
-**Non audité.** Cette spec et son implémentation de référence n'ont pas encore été
-revues par des cryptographes indépendants. Ne pas lui faire confiance avec de la
-valeur réelle avant un audit externe. OndrisHash ne réinvente aucune primitive
-cryptographique : elle combine BLAKE3 (fonction de hachage auditée, standardisée)
-et un générateur pseudo-aléatoire déterministe dans une architecture originale
-de type "memory-hard + accès mémoire dépendant des données", inspirée des
-familles Ethash (dataset par époque) et CryptoNight/RandomX (scratchpad mixing).
-Ce qui est nouveau ici, c'est l'**architecture et le paramétrage**, pas les
-briques cryptographiques sous-jacentes.
+**Unaudited.** This spec and its reference implementation have not yet been
+reviewed by independent cryptographers. Do not trust it with real value
+before an external audit. OndrisHash does not reinvent any cryptographic
+primitive: it combines BLAKE3 (an audited, standardized hash function) and
+a deterministic pseudo-random generator in an original "memory-hard +
+data-dependent memory access" architecture, inspired by the Ethash family
+(per-epoch dataset) and CryptoNight/RandomX (scratchpad mixing). What's new
+here is the **architecture and parameterization**, not the underlying
+cryptographic building blocks.
 
-## Objectifs de conception
+## Design goals
 
-1. **GPU-friendly** : accès mémoire massivement parallèles et uniformes,
-   ce qui correspond exactement à la force d'un GPU (bande passante mémoire
-   élevée, milliers de threads).
-2. **ASIC-résistant** : chaque hash nécessite un accès aléatoire à un dataset
-   de plusieurs centaines de Mo à quelques Go. Un ASIC dédié devrait embarquer
-   la même quantité de RAM rapide qu'un GPU, ce qui annule son avantage de coût/consommation.
-3. **CPU-résistant modérément** : un CPU peut techniquement calculer l'algorithme
-   (nécessaire pour la vérification par les nodes), mais son débit est très
-   inférieur à un GPU à cause de la bande passante mémoire plus faible et du
-   nombre de threads limité.
+1. **GPU-friendly**: massively parallel, uniform memory access, which maps
+   directly onto a GPU's strength (high memory bandwidth, thousands of
+   threads).
+2. **ASIC-resistant**: every hash requires random access into a dataset of
+   several hundred MB to a few GB. A dedicated ASIC would need to embed the
+   same amount of fast RAM as a GPU, which cancels out its cost/power
+   advantage.
+3. **Moderately CPU-resistant**: a CPU can technically compute the
+   algorithm (needed for node-side verification), but its throughput is far
+   below a GPU's due to lower memory bandwidth and a limited thread count.
 
-## Paramètres
+## Parameters
 
-| Constante | Valeur testnet | Description |
+| Constant | Testnet value | Description |
 |---|---|---|
-| `EPOCH_LENGTH` | 2048 blocs | Fréquence de régénération du dataset |
-| `CACHE_SIZE` | 16 Mio | Graine compacte dérivée du seed d'époque |
-| `DATASET_SIZE` | 64 Mio (testnet/dev) / 2-4 Gio (mainnet cible) | Dataset complet utilisé pour le mixing |
-| `SCRATCHPAD_SIZE` | 2 Mio | Mémoire de travail par tentative de hash |
-| `MIX_ROUNDS` | 8 | Nombre de tours de mixing dépendant des données |
+| `EPOCH_LENGTH` | 2048 blocks | How often the dataset is regenerated |
+| `CACHE_SIZE` | 16 MiB | Compact seed derived from the epoch seed |
+| `DATASET_SIZE` | 64 MiB (testnet/dev) / 2-4 GiB (mainnet target) | Full dataset used for mixing |
+| `SCRATCHPAD_SIZE` | 2 MiB | Working memory per hash attempt |
+| `MIX_ROUNDS` | 8 | Number of data-dependent mixing rounds |
 
-Les tailles testnet sont volontairement réduites pour que le développement et les
-tests tournent vite sur du matériel modeste (y compris CPU). Les valeurs mainnet
-seront revues avec l'auditeur avant tout lancement réel.
+Testnet sizes are intentionally reduced so development and tests run fast
+on modest hardware (including CPU-only). Mainnet values will be revisited
+with the auditor before any real launch.
 
-## Étape 1 — Seed d'époque
+## Step 1 — Epoch seed
 
 ```
 epoch(height) = height / EPOCH_LENGTH
 epoch_seed(0) = BLAKE3("ONDRIS_GENESIS_EPOCH")
-epoch_seed(e) = BLAKE3(hash_of_block_at(e * EPOCH_LENGTH))   pour e > 0
+epoch_seed(e) = BLAKE3(hash_of_block_at(e * EPOCH_LENGTH))   for e > 0
 ```
 
-Le seed d'époque dépend du contenu réel de la chaîne (hash d'un bloc miné),
-ce qui empêche de précalculer les datasets futurs à l'avance.
+The epoch seed depends on the actual content of the chain (the hash of a
+mined block), which prevents precomputing future datasets ahead of time.
 
-## Étape 2 — Cache et dataset
+## Step 2 — Cache and dataset
 
 ```
 cache = BLAKE3_XOF(epoch_seed, output_len = CACHE_SIZE)
 
-dataset[i] pour i in [0, DATASET_SIZE / 64) :
+dataset[i] for i in [0, DATASET_SIZE / 64):
     item = cache[(i * 64) % CACHE_SIZE .. +64]
-    répéter 2 fois:
+    repeat 2 times:
         item = BLAKE3(item || i.to_le_bytes())
     dataset[i*64 .. +64] = item
 ```
 
-Le cache est petit et rapide à générer (ou vérifier en mode "light client").
-Le dataset complet est ce que les mineurs génèrent une fois par époque et
-gardent en mémoire (VRAM) pour tout miner l'époque.
+The cache is small and fast to generate (or verify in "light client" mode).
+The full dataset is what miners generate once per epoch and keep in memory
+(VRAM) to mine the whole epoch.
 
-## Étape 3 — Hash d'un essai (header + nonce)
+## Step 3 — Hashing one attempt (header + nonce)
 
 ```
 input   = header_bytes || nonce.to_le_bytes()
-seed    = BLAKE3(input)                       // 32 octets
-prng    = Xoshiro256** seedé par `seed`
+seed    = BLAKE3(input)                       // 32 bytes
+prng    = Xoshiro256** seeded with `seed`
 scratchpad = [0u8; SCRATCHPAD_SIZE]
 
-// Initialisation : on remplit le scratchpad avec des tranches du dataset
-// choisies pseudo-aléatoirement (c'est ici que la "largeur mémoire" est requise)
-pour chaque bloc de 64 octets du scratchpad:
+// Init: fill the scratchpad with pseudo-randomly chosen slices of the
+// dataset (this is where "memory width" is required)
+for each 64-byte block of the scratchpad:
     idx = prng.next_u64() % (DATASET_SIZE / 64)
-    scratchpad[bloc] = dataset[idx*64 .. +64] XOR seed_étendu(bloc)
+    scratchpad[block] = dataset[idx*64 .. +64] XOR extended_seed(block)
 
-// Mixing : MIX_ROUNDS tours de mélange dépendant des données déjà écrites
-pour round in 0..MIX_ROUNDS:
-    pour chaque bloc de 64 octets du scratchpad à la position p:
-        idx_dep = prng.next_u64() % (SCRATCHPAD_SIZE / 64)   // dépend de l'état courant
-        scratchpad[p] = BLAKE3(scratchpad[p] || scratchpad[idx_dep])[..64]
+// Mixing: MIX_ROUNDS rounds of mixing, dependent on data already written
+for round in 0..MIX_ROUNDS:
+    for each 64-byte block of the scratchpad at position p:
+        dep_idx = prng.next_u64() % (SCRATCHPAD_SIZE / 64)   // depends on current state
+        scratchpad[p] = BLAKE3(scratchpad[p] || scratchpad[dep_idx])[..64]
 
-final_hash = BLAKE3(scratchpad)   // 32 octets
+final_hash = BLAKE3(scratchpad)   // 32 bytes
 ```
 
-L'étape de mixing lit et écrit le scratchpad de façon **dépendante des données
-déjà calculées** (comme CryptoNight/RandomX) : impossible de paralléliser tous
-les rounds à l'avance, ce qui limite l'avantage d'un circuit figé sans mémoire
-suffisante pour tenir l'état intermédiaire.
+The mixing step reads and writes the scratchpad in a way that **depends on
+data already computed** (like CryptoNight/RandomX): it's impossible to
+parallelize all rounds ahead of time, which limits the advantage of a fixed
+circuit without enough memory to hold the intermediate state.
 
-## Étape 4 — Validation
+## Step 4 — Validation
 
 ```
-valide(final_hash, target) ⟺ interpréter(final_hash) en big-endian <= target
+valid(final_hash, target) ⟺ interpret(final_hash) as big-endian <= target
 ```
 
-`target` est dérivé de la difficulté courante exactement comme le `nBits`
-de Bitcoin (format compact 32 bits : exposant + mantisse).
+`target` is derived from the current difficulty, exactly like Bitcoin's
+`nBits` (32-bit compact format: exponent + mantissa).
 
-## Vérification par un node (pas besoin de miner)
+## Node-side verification (no mining required)
 
-Un node qui reçoit un bloc doit pouvoir vérifier le PoW sans avoir miné.
-Deux options, à trancher avant l'implémentation finale :
+A node that receives a block must be able to verify the PoW without having
+mined it. Two options, to be settled before the final implementation:
 
-- **Vérification "full"** : le node maintient aussi le dataset complet de
-  l'époque courante (comme Ethash côté node complet) — coûteux en RAM mais
-  simple.
-- **Vérification "light"** : régénérer à la volée, pour les quelques indices
-  réellement accédés durant le calcul, les valeurs de dataset nécessaires à
-  partir du `cache` seul (comme Ethash côté client léger) — plus lent par
-  hash mais RAM négligeable.
+- **"Full" verification**: the node also keeps the full dataset for the
+  current epoch (like an Ethash full node) — expensive in RAM but simple.
+- **"Light" verification**: regenerate on the fly, for the few indices
+  actually accessed during the computation, the dataset values needed from
+  the `cache` alone (like an Ethash light client) — slower per hash but
+  negligible RAM.
 
-Pour la première implémentation (testnet), on choisit la vérification **full**
-pour rester simple ; le mode "light" est documenté comme travail futur.
+For the first implementation (testnet), we choose **full** verification to
+keep things simple; "light" mode is documented as future work.
 
-## Ce qui n'est PAS encore fait (travail futur, à ne pas présenter comme livré)
+## What is NOT done yet (future work, not to be presented as delivered)
 
-- **Kernel GPU (OpenCL/CUDA)** : cette spec définit les règles de consensus
-  via une implémentation de référence CPU. Un mineur GPU performant est un
-  travail séparé qui portera cette même logique sur GPU.
-- **Couche "calcul utile"** évoquée dans les discussions de conception
-  (rediriger une partie du travail de minage vers du calcul réutilisable) :
-  research-grade, nécessite un mécanisme de vérification bon marché du
-  travail "utile" pour ne pas ouvrir de faille (un node ne doit jamais avoir
-  à refaire le calcul utile en entier pour vérifier un bloc). Non implémenté
-  dans cette première version — interface prévue mais vide.
-- **Audit cryptographique indépendant** — condition préalable à tout lancement
-  avec de la valeur réelle en jeu.
+- **GPU kernel (OpenCL/CUDA)**: this spec defines the consensus rules via a
+  CPU reference implementation. A performant GPU miner is separate work
+  that will port this same logic to GPU.
+- **"Useful compute" layer** discussed during design (redirecting part of
+  the mining work toward reusable computation): research-grade, requires a
+  cheap verification mechanism for the "useful" work so it doesn't open a
+  vulnerability (a node must never have to redo the entire useful
+  computation to verify a block). Not implemented in this first version —
+  the interface is planned but empty.
+- **Independent cryptographic audit** — a prerequisite for any launch with
+  real value at stake.

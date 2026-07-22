@@ -1,7 +1,6 @@
-//! DTOs partagés entre le node (serveur RPC), le wallet et le mineur
-//! (clients RPC). Vivent dans `ondris-core` pour qu'une seule définition
-//! serve tout le monde, plutôt que de dupliquer des structs incompatibles
-//! entre binaires.
+//! DTOs shared between the node (RPC server), the wallet and the miner
+//! (RPC clients). Live in `ondris-core` so a single definition serves
+//! everyone, instead of duplicating incompatible structs across binaries.
 
 use crate::block::Block;
 use crate::state::Account;
@@ -34,16 +33,16 @@ impl AccountInfo {
     }
 }
 
-/// Modèle de travail renvoyé par `GET /work` : un bloc prêt à être miné
-/// (nonce = 0, transactions déjà incluses) plus tout ce dont le mineur a
-/// besoin pour régénérer localement le dataset de l'époque concernée sans
-/// avoir à le télécharger.
+/// Work template returned by `GET /work`: a block ready to be mined
+/// (nonce = 0, transactions already included) plus everything the miner
+/// needs to regenerate the relevant epoch's dataset locally without
+/// having to download it.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkTemplate {
     pub block: Block,
     pub target: [u8; 32],
     pub epoch: u64,
-    /// Hash du bloc de bordure d'époque, `None` uniquement pour l'époque 0.
+    /// Hash of the epoch boundary block, `None` only for epoch 0.
     pub epoch_boundary_hash: Option<Hash256>,
 }
 

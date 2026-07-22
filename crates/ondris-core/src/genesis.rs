@@ -13,7 +13,7 @@ pub struct GenesisConfig {
     pub network_name: String,
     pub timestamp: u64,
     pub initial_difficulty: u64,
-    /// Récompense de bloc initiale, en plus petite unité (1 ONDR = 100_000_000 unités, comme le satoshi).
+    /// Initial block reward, in smallest units (1 ONDR = 100,000,000 units, like satoshis).
     pub initial_reward: u64,
     pub halving_interval: u64,
     pub target_block_time_secs: u64,
@@ -28,11 +28,11 @@ impl GenesisConfig {
         Ok(cfg)
     }
 
-    /// Config de test rapide, pas destinée à un vrai réseau.
+    /// Quick test config, not intended for a real network.
     pub fn testnet_default() -> Self {
         GenesisConfig {
             network_name: "ondris-testnet".to_string(),
-            timestamp: 1_753_142_400, // 2026-07-22 00:00:00 UTC (date de conception du projet)
+            timestamp: 1_753_142_400, // 2026-07-22 00:00:00 UTC (project design date)
             initial_difficulty: 1000,
             initial_reward: 50 * 100_000_000,
             halving_interval: 210_000,

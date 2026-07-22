@@ -6,7 +6,7 @@ use std::path::Path;
 #[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Account {
     pub balance: u64,
-    /// Prochain `account_nonce` de transaction attendu (protection anti-rejeu).
+    /// Next expected transaction `account_nonce` (anti-replay protection).
     pub nonce: u64,
 }
 
@@ -16,8 +16,8 @@ struct Tip {
     hash: Hash256,
 }
 
-/// État de la chaîne persisté sur disque via `sled` : comptes, blocs,
-/// index hauteur -> hash, et la tête de chaîne courante.
+/// Chain state persisted to disk via `sled`: accounts, blocks, a
+/// height -> hash index, and the current chain tip.
 pub struct ChainState {
     accounts: sled::Tree,
     blocks: sled::Tree,

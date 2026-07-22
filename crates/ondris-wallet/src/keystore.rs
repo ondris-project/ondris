@@ -1,7 +1,7 @@
-//! Keystore chiffré sur disque : le seed Ed25519 (32 octets) est chiffré
-//! avec AES-256-GCM dont la clé est dérivée du mot de passe via Argon2id.
-//! Rien n'est jamais écrit en clair à part la clé publique et l'adresse
-//! (non sensibles).
+//! Encrypted on-disk keystore: the Ed25519 seed (32 bytes) is encrypted
+//! with AES-256-GCM, whose key is derived from the password via Argon2id.
+//! Nothing is ever written in plaintext except the public key and address
+//! (not sensitive).
 
 use aes_gcm::aead::Aead;
 use aes_gcm::{Aes256Gcm, KeyInit, Nonce};
@@ -24,7 +24,7 @@ fn derive_key(password: &str, salt: &[u8]) -> anyhow::Result<[u8; 32]> {
     let mut key = [0u8; 32];
     argon2::Argon2::default()
         .hash_password_into(password.as_bytes(), salt, &mut key)
-        .map_err(|e| anyhow::anyhow!("dérivation de clé échouée: {e:?}"))?;
+        .map_err(|e| anyhow::anyhow!("key derivation failed: {e:?}"))?;
     Ok(key)
 }
 
@@ -40,10 +40,10 @@ pub fn create(password: &str) -> anyhow::Result<(Keystore, KeyPair)> {
     OsRng.fill_bytes(&mut nonce_bytes);
 
     let cipher =
-        Aes256Gcm::new_from_slice(&key).map_err(|e| anyhow::anyhow!("clé invalide: {e:?}"))?;
+        Aes256Gcm::new_from_slice(&key).map_err(|e| anyhow::anyhow!("invalid key: {e:?}"))?;
     let ciphertext = cipher
         .encrypt(Nonce::from_slice(&nonce_bytes), seed.as_ref())
-        .map_err(|e| anyhow::anyhow!("chiffrement échoué: {e:?}"))?;
+        .map_err(|e| anyhow::anyhow!("encryption failed: {e:?}"))?;
 
     let ks = Keystore {
         public_key: keypair.public().to_hex(),
@@ -62,12 +62,12 @@ pub fn unlock(ks: &Keystore, password: &str) -> anyhow::Result<KeyPair> {
     let ciphertext = hex::decode(&ks.ciphertext)?;
 
     let cipher =
-        Aes256Gcm::new_from_slice(&key).map_err(|e| anyhow::anyhow!("clé invalide: {e:?}"))?;
+        Aes256Gcm::new_from_slice(&key).map_err(|e| anyhow::anyhow!("invalid key: {e:?}"))?;
     let plaintext = cipher
         .decrypt(Nonce::from_slice(&nonce_bytes), ciphertext.as_ref())
-        .map_err(|_| anyhow::anyhow!("mot de passe incorrect ou fichier de wallet corrompu"))?;
+        .map_err(|_| anyhow::anyhow!("incorrect password or corrupted wallet file"))?;
 
-    anyhow::ensure!(plaintext.len() == 32, "seed déchiffré de taille inattendue");
+    anyhow::ensure!(plaintext.len() == 32, "decrypted seed has unexpected size");
     let mut seed = [0u8; 32];
     seed.copy_from_slice(&plaintext);
     Ok(KeyPair::from_seed(seed))

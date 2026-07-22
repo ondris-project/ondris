@@ -1,71 +1,70 @@
-# Ondris — présentation technique
+# Ondris — Technical Overview
 
-*Document technique, pas un prospectus d'investissement. Ondris n'est, à ce
-stade, ni auditée, ni lancée en mainnet. Rien dans ce document ne constitue
-un conseil financier ni une promesse de valeur future.*
+*Technical document, not an investment prospectus. Ondris is, at this
+stage, neither audited nor launched on mainnet. Nothing in this document
+constitutes financial advice or a promise of future value.*
 
 ## Motivation
 
-La plupart des cryptomonnaies Proof-of-Work convergent, avec le temps, vers
-un minage dominé par des ASIC dédiés : le minage cesse d'être accessible à
-quiconque possède un GPU grand public. Ondris vise un algorithme qui reste
-GPU-friendly durablement en s'appuyant sur une contrainte structurelle (accès
-massif à de la mémoire vive rapide) plutôt que sur l'espoir que personne ne
-construise l'ASIC correspondant.
+Most Proof-of-Work cryptocurrencies converge, over time, toward mining
+dominated by dedicated ASICs: mining stops being accessible to anyone with
+a consumer GPU. Ondris aims for an algorithm that stays GPU-friendly over
+the long run by relying on a structural constraint (massive access to fast
+RAM) rather than hoping nobody builds the corresponding ASIC.
 
-## Approche technique
+## Technical approach
 
-OndrisHash combine, dans une architecture originale, des primitives
-cryptographiques déjà auditées (BLAKE3) plutôt que d'introduire une nouvelle
-primitive de hachage non éprouvée :
+OndrisHash combines, in an original architecture, cryptographic primitives
+that are already audited (BLAKE3) rather than introducing a new, unproven
+hash primitive:
 
-- un **dataset régénéré par époque** (comme Ethash), dérivé du contenu réel
-  de la chaîne — empêche le précalcul ;
-- un **scratchpad mélangé de façon dépendante des données** déjà écrites
-  (comme CryptoNight/RandomX) — empêche la parallélisation triviale sans
-  mémoire suffisante pour tenir l'état intermédiaire.
+- a **dataset regenerated per epoch** (like Ethash), derived from the
+  chain's actual content — prevents precomputation;
+- a **scratchpad mixed in a data-dependent way** on data already written
+  (like CryptoNight/RandomX) — prevents trivial parallelization without
+  enough memory to hold the intermediate state.
 
-Le détail complet est dans [ALGORITHM.md](ALGORITHM.md), y compris ses
-limites actuelles et ce qui reste à faire avant un audit.
+Full details are in [ALGORITHM.md](ALGORITHM.md), including its current
+limitations and what remains before an audit.
 
-## État du projet
+## Project status
 
-| Composant | État |
+| Component | Status |
 |---|---|
-| Algorithme OndrisHash (implémentation de référence CPU) | Fonctionnel, non audité |
-| Node (chaîne + réseau P2P + RPC) | Fonctionnel, testnet uniquement |
-| Wallet CLI | Fonctionnel |
-| Mineur CPU de référence | Fonctionnel |
-| Mineur GPU (OpenCL/CUDA) | Non commencé |
-| Gestion des forks/réorganisations | Non implémentée |
-| Audit cryptographique indépendant | Non réalisé |
-| Couche "calcul utile" | Non implémentée (research-grade) |
+| OndrisHash algorithm (CPU reference implementation) | Functional, unaudited |
+| Node (chain + P2P network + RPC) | Functional, testnet only |
+| CLI wallet | Functional |
+| Reference CPU miner | Functional |
+| GPU miner (OpenCL/CUDA) | Not started |
+| Fork/reorg handling | Not implemented |
+| Independent cryptographic audit | Not done |
+| "Useful compute" layer | Not implemented (research-grade) |
 
-## Économie du jeton (paramètres testnet, à revoir avant mainnet)
+## Token economics (testnet parameters, to be revisited before mainnet)
 
-- Émission décroissante par halving (comme Bitcoin), tous les 210 000 blocs.
-- Récompense de bloc initiale : 50 ONDR.
-- Bloc cible : 30 secondes.
-- Réajustement de difficulté toutes les 60 blocs.
-- Pas de pré-mine par défaut dans la config testnet fournie
-  (`config/testnet-genesis.json`) — toute allocation de fondation devra être
-  décidée explicitement, documentée, et rendue publique avant tout lancement
-  réel.
+- Decreasing emission via halving (like Bitcoin), every 210,000 blocks.
+- Initial block reward: 50 ONDR.
+- Target block time: 30 seconds.
+- Difficulty retarget every 60 blocks.
+- No premine by default in the provided testnet config
+  (`config/testnet-genesis.json`) — any foundation allocation will need to
+  be explicitly decided, documented, and made public before any real
+  launch.
 
-## Ce que ce document ne fait pas
+## What this document does not do
 
-Il ne prétend pas que l'algorithme est sûr en l'absence d'audit indépendant.
-Il ne fait aucune promesse sur la valeur future d'un éventuel jeton. Toute
-décision de miner ou d'acquérir un jeton Ondris, si un réseau réel est un
-jour lancé, devrait être précédée d'une vérification indépendante de l'état
-du code à ce moment-là — pas de ce document.
+It does not claim the algorithm is safe in the absence of an independent
+audit. It makes no promise about the future value of any token. Any
+decision to mine or acquire an Ondris token, if a real network is ever
+launched, should be preceded by an independent check of the code's state
+at that time — not of this document.
 
-## Prochaines étapes
+## Next steps
 
-1. Testnet public, ouvert à des mineurs volontaires.
-2. Correction des bugs remontés par le testnet.
-3. Gestion des forks/réorganisations de chaîne.
-4. Audit cryptographique indépendant de OndrisHash.
-5. Mineur GPU de référence (OpenCL/CUDA).
-6. Conseil juridique sur la qualification réglementaire avant toute
-   sollicitation d'investisseurs.
+1. Public testnet, open to volunteer miners.
+2. Fixing bugs surfaced by the testnet.
+3. Chain fork/reorganization handling.
+4. Independent cryptographic audit of OndrisHash.
+5. Reference GPU miner (OpenCL/CUDA).
+6. Legal counsel on regulatory classification before any solicitation of
+   investors.
