@@ -71,10 +71,21 @@ at that time — not of this document.
 
 ## Next steps
 
+Done since the testnet opened: chain fork/reorganization handling, and a
+reference GPU miner (OpenCL, correctness-validated and GPU-scale — see
+docs/ARCHITECTURE.md). What's left:
+
 1. Public testnet, open to volunteer miners.
 2. Fixing bugs surfaced by the testnet.
-3. Chain fork/reorganization handling.
-4. Independent cryptographic audit of OndrisHash.
-5. Reference GPU miner (OpenCL/CUDA).
-6. Legal counsel on regulatory classification before any solicitation of
+3. Independent cryptographic audit of OndrisHash — the single largest
+   remaining item, and a prerequisite for trusting the v2 algorithm with
+   real value.
+4. Harden the P2P layer: encrypted/authenticated transport (currently
+   plaintext TCP) and real peer discovery (currently a static seed list).
+5. A persistent, re-broadcast-aware mempool (transactions from a reorg
+   are already re-queued automatically; transactions from a dropped,
+   never-submitted work template are not).
+6. A light-client PoW verification mode (today every node holds the full
+   epoch dataset in RAM).
+7. Legal counsel on regulatory classification before any solicitation of
    investors.
