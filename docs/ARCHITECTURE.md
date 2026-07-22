@@ -81,6 +81,49 @@ finding a block seconds apart) this fork-choice rule is meant to resolve.
 A branch that diverges earlier and still ends up winning would need
 per-branch epoch tracking, which isn't implemented.
 
+## P2P transport encryption
+
+Every connection between two nodes (`ondris-network/src/noise.rs`) is
+wrapped in a Noise_XX handshake before a single application byte is sent,
+using the `snow` crate — a standard Noise Protocol Framework
+implementation, not a bespoke construction, for the same reason this
+project uses BLAKE3 instead of inventing a hash function: don't roll your
+own cryptography. Noise_XX is the same family of construction WireGuard
+and the Lightning Network use for their transport security, and is the
+right pattern for a permissionless P2P network specifically because it
+doesn't require either side to know the other's public key in advance —
+a node just needs to prove, cryptographically, that whoever it's talking
+to for the rest of the connection is the same party it shook hands with,
+not that this party is on any particular allow-list (there is no
+allow-list; anyone can connect with a freshly generated identity).
+
+Each node has a persistent X25519 keypair (`<data-dir>/node_identity.key`,
+generated on first startup) — separate from the Ed25519 keys used for
+wallet/transaction signing, since transport identity and spending
+authority are different concerns on different curves. After a successful
+handshake, both sides have an encrypted, integrity-protected channel
+(ChaCha20-Poly1305) and each has cryptographic proof of the other's
+static public key, logged as a `PeerId` alongside the connection's
+`SocketAddr`.
+
+Application messages can be larger than Noise's 65535-byte per-message
+cap (a full block, in particular), so `EncryptedWriter`/`EncryptedReader`
+chunk a logical write across as many Noise frames as needed and
+reassemble them on the other side — validated with a dedicated test that
+forces chunking with a >200KB payload, plus a regression test for a bug
+caught in a live two-node smoke test (not just unit tests): a single
+small message written as one Noise frame decrypts to more bytes than a
+`read_exact(4)` call for its length prefix asks for, and those leftover
+bytes have to survive into the *next* read call rather than being
+dropped — exactly what `EncryptedReader`'s internal buffer exists to fix.
+A third test manually flips a bit in a real ciphertext and confirms
+decryption fails outright rather than silently returning garbage.
+
+What this does **not** change: there's still no peer discovery (a static
+seed list only) and no reputation/banning system — Noise authenticates
+*that you're still talking to the same peer you handshook with*, not
+*that this peer is trustworthy*.
+
 ## The GPU miner
 
 `ondris-miner-gpu`'s kernel (`crates/ondris-miner-gpu/src/kernel.cl`)
@@ -155,11 +198,12 @@ hardware via NVIDIA's OpenCL implementation, not CUDA directly).
   transactions it contained are lost until the wallet resends them.
   Transactions displaced by a reorg *are* automatically re-queued (see
   above), but there's still no persistent, re-broadcast-aware mempool.
-- **Unencrypted, unauthenticated P2P transport**: fine for a closed
-  testnet, not for a public network with real value at stake.
 - **No peer discovery (DHT)**: static seed node list provided in config;
   orphan resolution broadcasts `GetBlock` to every connected peer rather
-  than targeting whoever is most likely to have it.
+  than targeting whoever is most likely to have it. The transport itself
+  is now encrypted and mutually authenticated (see "P2P transport
+  encryption" above) — what's missing is *finding* peers, not securing
+  the link to ones you already know about.
 - **"Full" PoW verification only**: every node keeps the full dataset for
   the current epoch in RAM. A "light client" mode (on-the-fly regeneration
   of only the needed indices from the cache) is not implemented.

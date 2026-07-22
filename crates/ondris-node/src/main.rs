@@ -1,6 +1,6 @@
 //! Ondris reference node: chain + P2P network + HTTP RPC API.
-//! Testnet only — see docs/ARCHITECTURE.md for known limitations
-//! (unencrypted P2P transport, static peer list only).
+//! Testnet only — see docs/ARCHITECTURE.md for known limitations (P2P
+//! peer discovery is still a static list only).
 
 use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
@@ -105,8 +105,15 @@ async fn main() -> anyhow::Result<()> {
         genesis.network_name
     );
 
+    let identity_path = args.data_dir.join("node_identity.key");
+    let identity = ondris_network::NodeIdentity::load_or_generate(&identity_path)?;
+    tracing::info!(
+        "node identity (Noise static public key): {}",
+        ondris_network::peer_id_hex(&identity.public_key)
+    );
+
     let (events_tx, mut events_rx) = mpsc::unbounded_channel::<NetworkEvent>();
-    let network = Network::new(genesis.network_name.clone(), events_tx);
+    let network = Network::new(genesis.network_name.clone(), events_tx, identity);
     network.set_height(start_height);
     network.listen(args.p2p_addr).await?;
 

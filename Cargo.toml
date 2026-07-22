@@ -40,6 +40,7 @@ hex = "0.4"
 rayon = "1.10"
 rpassword = "7"
 opencl3 = "0.9"
+snow = "0.9"
 
 [profile.release]
 opt-level = 3

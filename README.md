@@ -15,7 +15,7 @@ early-stage, unaudited software and weigh that risk accordingly.
 
 **Do not use with real value.** The Proof-of-Work algorithm (`OndrisHash`,
 see [docs/ALGORITHM.md](docs/ALGORITHM.md)) has not been reviewed by
-independent cryptographers. The P2P transport is unencrypted. See
+independent cryptographers. See
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full list of known
 limitations and remaining work before a serious mainnet launch.
 
@@ -23,7 +23,7 @@ limitations and remaining work before a serious mainnet launch.
 
 - `ondris-pow` — the OndrisHash algorithm (memory-hard, per-epoch dataset, GPU-friendly).
 - `ondris-core` — blockchain types (block, transaction, account), validation, difficulty, genesis.
-- `ondris-network` — basic TCP P2P gossip.
+- `ondris-network` — TCP P2P gossip, wrapped in a Noise_XX-encrypted, mutually-authenticated transport (see docs/ARCHITECTURE.md) — no peer discovery yet, static seed list only.
 - `ondris-node` — full daemon: chain + network + HTTP RPC API.
 - `ondris-miner` — reference CPU miner (multi-threaded).
 - `ondris-miner-gpu` — OpenCL GPU miner. Its kernel is a mechanical translation of a Rust reference chain (BLAKE3 → the FNV dataset-mixing algorithm) that's unit-tested against the real `blake3` crate first, then checked bit-for-bit against `ondris_pow::ondris_hash` on real hardware via `ondris-miner-gpu self-test` — run that before mining on any new GPU/driver. Correctness-validated on an RTX 4070 Super at ~13,000,000 H/s — see docs/ARCHITECTURE.md for how that compares to the CPU miner and the algorithm redesign that got it there.
@@ -34,7 +34,8 @@ design, an independent cryptographic audit.
 
 ## Known limitations (see docs/ARCHITECTURE.md for details)
 
-- P2P transport is unencrypted, no peer discovery (static seed list only).
+- P2P transport is encrypted and mutually authenticated (Noise_XX), but
+  there's still no peer discovery — a static seed list only.
 - No independent cryptographic audit of OndrisHash.
 - Minimal mempool (transactions displaced by a reorg are re-queued automatically; a stale, never-submitted work template still drops its transactions).
 - "Full" PoW verification only (every node holds the entire epoch dataset in RAM); no light-client mode yet.

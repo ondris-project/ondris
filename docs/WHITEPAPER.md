@@ -80,8 +80,10 @@ docs/ARCHITECTURE.md). What's left:
 3. Independent cryptographic audit of OndrisHash — the single largest
    remaining item, and a prerequisite for trusting the v2 algorithm with
    real value.
-4. Harden the P2P layer: encrypted/authenticated transport (currently
-   plaintext TCP) and real peer discovery (currently a static seed list).
+4. Real peer discovery (currently a static seed list) — the transport
+   itself is now encrypted and mutually authenticated (Noise_XX, see
+   docs/ARCHITECTURE.md), so what's left here is finding peers, not
+   securing the link to ones already known.
 5. A persistent, re-broadcast-aware mempool (transactions from a reorg
    are already re-queued automatically; transactions from a dropped,
    never-submitted work template are not).

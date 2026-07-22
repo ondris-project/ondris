@@ -1,11 +1,15 @@
-//! Minimal P2P network for Ondris: block/transaction gossip over TCP with
-//! length-prefixed JSON messages, plus a `GetBlock`/`BlockResponse` pair
-//! the node uses to fetch a missing parent when a block arrives out of
-//! order. No automatic peer discovery (DHT) in this first version: the
-//! peer list (seed nodes) is supplied via config at node startup.
-//! Documented as future work: peer discovery, transport encryption
-//! (currently plaintext, fine for a testnet but not for a mainnet with
-//! real value at stake).
+//! Minimal P2P network for Ondris: block/transaction gossip over TCP,
+//! wrapped in a Noise_XX-encrypted, mutually-authenticated transport (see
+//! `noise.rs`) with length-prefixed JSON messages on top, plus a
+//! `GetBlock`/`BlockResponse` pair the node uses to fetch a missing parent
+//! when a block arrives out of order. No automatic peer discovery (DHT)
+//! in this version: the peer list (seed nodes) is supplied via config at
+//! node startup — still documented as future work in
+//! `docs/ARCHITECTURE.md`.
+
+pub mod noise;
+
+pub use noise::{peer_id_hex, NodeIdentity};
 
 use ondris_core::{Block, Transaction};
 use ondris_primitives::Hash256;
@@ -14,7 +18,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::{mpsc, Mutex};
 
@@ -56,15 +60,21 @@ pub struct Network {
     events_tx: mpsc::UnboundedSender<NetworkEvent>,
     network_name: String,
     my_height: Arc<AtomicU64>,
+    identity: Arc<NodeIdentity>,
 }
 
 impl Network {
-    pub fn new(network_name: String, events_tx: mpsc::UnboundedSender<NetworkEvent>) -> Self {
+    pub fn new(
+        network_name: String,
+        events_tx: mpsc::UnboundedSender<NetworkEvent>,
+        identity: NodeIdentity,
+    ) -> Self {
         Network {
             peers: Arc::new(Mutex::new(HashMap::new())),
             events_tx,
             network_name,
             my_height: Arc::new(AtomicU64::new(0)),
+            identity: Arc::new(identity),
         }
     }
 
@@ -84,7 +94,8 @@ impl Network {
                     Ok((stream, peer_addr)) => {
                         let this2 = this.clone();
                         tokio::spawn(async move {
-                            if let Err(e) = this2.handle_connection(stream, peer_addr).await {
+                            if let Err(e) = this2.handle_connection(stream, peer_addr, false).await
+                            {
                                 tracing::warn!("inbound connection {peer_addr} closed: {e}");
                             }
                         });
@@ -101,7 +112,7 @@ impl Network {
         let stream = TcpStream::connect(addr).await?;
         let this = self.clone();
         tokio::spawn(async move {
-            if let Err(e) = this.handle_connection(stream, addr).await {
+            if let Err(e) = this.handle_connection(stream, addr, true).await {
                 tracing::warn!("outbound connection to {addr} closed: {e}");
             }
         });
@@ -112,23 +123,40 @@ impl Network {
         &self,
         stream: TcpStream,
         peer_addr: SocketAddr,
+        is_initiator: bool,
     ) -> anyhow::Result<()> {
+        let (mut reader, mut writer) = stream.into_split();
+
+        // Every byte from here on — including the application-level
+        // Handshake message below — travels over the Noise-encrypted
+        // channel; nothing is ever sent in the clear on this connection.
+        let (transport_state, peer_id) = if is_initiator {
+            noise::handshake_initiator(&mut reader, &mut writer, &self.identity).await?
+        } else {
+            noise::handshake_responder(&mut reader, &mut writer, &self.identity).await?
+        };
+        tracing::info!(
+            "noise handshake with {peer_addr} complete (peer id {})",
+            noise::peer_id_hex(&peer_id)
+        );
+        let transport = Arc::new(Mutex::new(transport_state));
+        let mut enc_reader = noise::EncryptedReader::new(reader, transport.clone());
+        let mut enc_writer = noise::EncryptedWriter::new(writer, transport);
+
         let (tx, mut rx) = mpsc::unbounded_channel::<Message>();
         self.peers.lock().await.insert(peer_addr, tx);
         let _ = self.events_tx.send(NetworkEvent::PeerConnected(peer_addr));
-
-        let (mut reader, mut writer) = stream.into_split();
 
         let handshake = Message::Handshake {
             version: PROTOCOL_VERSION,
             network: self.network_name.clone(),
             height: self.my_height.load(Ordering::Relaxed),
         };
-        write_message(&mut writer, &handshake).await?;
+        write_message(&mut enc_writer, &handshake).await?;
 
         let write_task = tokio::spawn(async move {
             while let Some(msg) = rx.recv().await {
-                if write_message(&mut writer, &msg).await.is_err() {
+                if write_message(&mut enc_writer, &msg).await.is_err() {
                     break;
                 }
             }
@@ -136,7 +164,7 @@ impl Network {
 
         let result: anyhow::Result<()> = async {
             loop {
-                let msg = read_message(&mut reader).await?;
+                let msg = read_message(&mut enc_reader).await?;
                 match msg {
                     Message::Handshake { network, .. } => {
                         anyhow::ensure!(
@@ -192,25 +220,28 @@ impl Network {
     }
 }
 
-async fn write_message<W: AsyncWrite + Unpin>(writer: &mut W, msg: &Message) -> anyhow::Result<()> {
+async fn write_message<W: AsyncWrite + Unpin>(
+    writer: &mut noise::EncryptedWriter<W>,
+    msg: &Message,
+) -> anyhow::Result<()> {
     let bytes = serde_json::to_vec(msg)?;
     let len = bytes.len() as u32;
-    writer.write_all(&len.to_be_bytes()).await?;
-    writer.write_all(&bytes).await?;
-    writer.flush().await?;
-    Ok(())
+    let mut framed = Vec::with_capacity(4 + bytes.len());
+    framed.extend_from_slice(&len.to_be_bytes());
+    framed.extend_from_slice(&bytes);
+    writer.write_all(&framed).await
 }
 
-async fn read_message<R: AsyncRead + Unpin>(reader: &mut R) -> anyhow::Result<Message> {
-    let mut len_buf = [0u8; 4];
-    reader.read_exact(&mut len_buf).await?;
-    let len = u32::from_be_bytes(len_buf) as usize;
+async fn read_message<R: AsyncRead + Unpin>(
+    reader: &mut noise::EncryptedReader<R>,
+) -> anyhow::Result<Message> {
+    let len_bytes = reader.read_exact(4).await?;
+    let len = u32::from_be_bytes(len_bytes.try_into().unwrap()) as usize;
     anyhow::ensure!(
         len <= 64 * 1024 * 1024,
         "received message too large ({len} bytes)"
     );
-    let mut buf = vec![0u8; len];
-    reader.read_exact(&mut buf).await?;
+    let buf = reader.read_exact(len).await?;
     let msg: Message = serde_json::from_slice(&buf)?;
     Ok(msg)
 }
