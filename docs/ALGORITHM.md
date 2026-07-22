@@ -22,15 +22,24 @@ hash). That shape is a deliberate choice those algorithms make to favor
 CPUs and starve GPUs and ASICs — which is exactly backwards from this
 project's stated goal. This was confirmed empirically, not just
 theoretically: a real OpenCL implementation of v1 benchmarked at ~75 H/s
-on an NVIDIA RTX 4070 Super, *slower* than a 4-thread CPU miner (~137 H/s)
-on the same machine. The root cause was architectural — 500,000+
-sequentially-dependent hash calls per attempt is a compute-bound workload,
-and compute-bound workloads don't play to a GPU's actual strength (memory
-bandwidth) — so it was fixed by changing the algorithm, not by tuning the
-GPU kernel further. v2's real-hardware benchmark on the same GPU: **~13
-million H/s**, roughly 95,000x faster than v1 and ~95,000x faster than the
-CPU miner. This is a breaking, consensus-level change — v1 and v2 chains
-are entirely incompatible with each other.
+on an NVIDIA RTX 4070 Super, *slower* than a 4-thread CPU miner running
+that same v1 algorithm (~137 H/s) on the same machine. The root cause was
+architectural — 500,000+ sequentially-dependent hash calls per attempt is
+a compute-bound workload, and compute-bound workloads don't play to a
+GPU's actual strength (memory bandwidth) — so it was fixed by changing the
+algorithm, not by tuning the GPU kernel further.
+
+v2's real-hardware benchmark on the same GPU: **~12.9 million H/s** — a
+~172,000x jump from v1's GPU throughput. v2 is also far cheaper for a CPU
+to compute than v1 was (64 dataset touches instead of 500,000+ sequential
+hashes): a 4-thread CPU miner running v2 does ~750,000 H/s on the same
+machine, so the honest GPU-vs-CPU comparison **on the new algorithm** is
+~13M vs ~750K H/s — a **~17x GPU advantage**, not the CPU-favoring
+regression v1 had, but also nowhere near as dramatic-sounding as
+comparing v2's GPU number against v1's CPU number would be (a comparison
+this document deliberately avoids making). This is a breaking,
+consensus-level change — v1 and v2 chains are entirely incompatible with
+each other.
 
 ## Design goals
 

@@ -117,14 +117,16 @@ its own either — every nonce the kernel flags gets re-hashed on the CPU
 with the real reference function before it's ever submitted to a node.
 
 Current status: correctness-validated this way on an NVIDIA RTX 4070
-Super, and now genuinely GPU-scale on the same hardware: **~13 million
-H/s** (`benchmark --batch-size 262144 --batches 15`), against a 4-thread
-CPU miner's ~137 H/s — a ~95,000x gap in the intended direction. This
-result only exists because of an algorithm redesign, not kernel tuning:
-the original algorithm (see `docs/ALGORITHM.md`'s revision history) used
-a CryptoNight/RandomX-style scratchpad mixed over hundreds of thousands
-of sequential BLAKE3 calls per hash, which benchmarked at ~75 H/s on this
-same GPU — slower than the CPU miner, because that workload is
+Super, and now genuinely GPU-scale on the same hardware: **~12.9 million
+H/s** (`benchmark --batch-size 262144 --batches 15`). The apples-to-apples
+comparison is against a 4-thread CPU miner running the *same* (v2)
+algorithm on the same machine, which does ~750,000 H/s — a **~17x GPU
+advantage**. This result only exists because of an algorithm redesign,
+not kernel tuning: the original algorithm (see `docs/ALGORITHM.md`'s
+revision history) used a CryptoNight/RandomX-style scratchpad mixed over
+hundreds of thousands of sequential BLAKE3 calls per hash, which
+benchmarked at ~75 H/s on this same GPU — slower than a 4-thread CPU miner
+running that same v1 algorithm (~137 H/s), because that workload is
 compute-bound, and compute-bound workloads don't play to a GPU's actual
 strength. Two kernel-level optimizations were tried against that original
 algorithm first (removing an unnecessary scratchpad copy, replacing a
@@ -134,7 +136,9 @@ itself rather than continuing to tune the kernel. The current v2 design
 replaces the scratchpad with an Ethash-style dataset (a small, fixed
 number of pseudo-random reads per hash, cheap FNV mixing between them),
 which is memory-bandwidth-bound instead — the thing a GPU is actually
-good at.
+good at, and which also made the algorithm far cheaper to compute on a
+CPU (64 dataset touches vs. 500,000+ sequential hashes), so v2's CPU
+miner is itself roughly 5,500x faster than v1's was.
 
 Not yet done: further occupancy/work-group tuning past this first working
 design, and a native CUDA path (the current kernel runs on NVIDIA

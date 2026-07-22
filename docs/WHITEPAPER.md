@@ -44,8 +44,8 @@ limitations and what remains before an audit.
 | OndrisHash algorithm (CPU reference implementation) | Functional, unaudited |
 | Node (chain + P2P network + RPC) | Functional, testnet only |
 | CLI wallet | Functional |
-| Reference CPU miner | Functional (~137 H/s, 4 threads, reference hardware) |
-| GPU miner (OpenCL) | Functional, correctness-validated on real hardware (RTX 4070 Super); ~13M H/s measured on the same GPU, ~95,000x the CPU reference miner |
+| Reference CPU miner | Functional (~750K H/s, 4 threads, reference hardware) |
+| GPU miner (OpenCL) | Functional, correctness-validated on real hardware (RTX 4070 Super); ~12.9M H/s measured on the same machine, ~17x the CPU reference miner |
 | Fork/reorg handling | Functional (see docs/ARCHITECTURE.md for known simplifications) |
 | Independent cryptographic audit | Not done |
 | "Useful compute" layer | Not implemented (research-grade) |
