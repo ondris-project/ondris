@@ -1,32 +1,49 @@
 # Ondris
 
-Blockchain Proof-of-Work GPU-friendly et résistante aux ASIC, avec un
-mineur de référence CPU et un wallet en ligne de commande.
+A GPU-friendly, ASIC-resistant Proof-of-Work blockchain, with a reference
+CPU miner and a command-line wallet.
 
-## Statut : testnet expérimental, non audité
+## Mainnet launch: July 25, 2026
 
-**Ne pas utiliser avec de la valeur réelle.** L'algorithme de Proof-of-Work
-(`OndrisHash`, voir [docs/ALGORITHM.md](docs/ALGORITHM.md)) n'a pas été revu
-par des cryptographes indépendants. Le node ne gère pas encore les
-réorganisations de chaîne (forks). Le transport P2P n'est pas chiffré. Voir
-[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) pour la liste complète des
-limitations connues et du travail restant avant un lancement mainnet sérieux.
+This is a target launch date, not a guarantee of a finished audit. As of
+this writing, the items listed under "Known limitations" below (fork
+handling, independent cryptographic audit, GPU miner) are **not** complete.
+Anyone mining, holding, or building on Ondris before and around the mainnet
+date should treat it as early-stage, unaudited software and weigh that risk
+accordingly.
 
-## Ce qui existe aujourd'hui
+## Status: experimental testnet, unaudited
 
-- `ondris-pow` — l'algorithme OndrisHash (memory-hard, dataset par époque, GPU-friendly).
-- `ondris-core` — types de blockchain (bloc, transaction, compte), validation, difficulté, genesis.
-- `ondris-network` — gossip P2P basique sur TCP.
-- `ondris-node` — daemon complet : chaîne + réseau + API RPC HTTP.
-- `ondris-miner` — mineur CPU de référence (multi-thread).
-- `ondris-wallet` — wallet CLI avec keystore chiffré (Argon2 + AES-256-GCM).
+**Do not use with real value.** The Proof-of-Work algorithm (`OndrisHash`,
+see [docs/ALGORITHM.md](docs/ALGORITHM.md)) has not been reviewed by
+independent cryptographers. The node does not yet handle chain
+reorganizations (forks). The P2P transport is unencrypted. See
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full list of known
+limitations and remaining work before a serious mainnet launch.
 
-Ce qui **n'existe pas encore** : un mineur GPU (OpenCL/CUDA), la couche de
-"calcul utile" évoquée en phase de conception, un audit cryptographique.
+## What exists today
 
-## Prérequis
+- `ondris-pow` — the OndrisHash algorithm (memory-hard, per-epoch dataset, GPU-friendly).
+- `ondris-core` — blockchain types (block, transaction, account), validation, difficulty, genesis.
+- `ondris-network` — basic TCP P2P gossip.
+- `ondris-node` — full daemon: chain + network + HTTP RPC API.
+- `ondris-miner` — reference CPU miner (multi-threaded).
+- `ondris-wallet` — CLI wallet with encrypted keystore (Argon2 + AES-256-GCM).
 
-- [Rust](https://rustup.rs/) (édition 2021, testé avec 1.96+)
+What **does not exist yet**: a GPU miner (OpenCL/CUDA), the "useful compute"
+layer discussed during design, an independent cryptographic audit.
+
+## Known limitations (see docs/ARCHITECTURE.md for details)
+
+- No fork/reorg handling — only linear extension of the current tip is accepted.
+- P2P transport is unencrypted, no peer discovery (static seed list only).
+- No independent cryptographic audit of OndrisHash.
+- Minimal mempool (no re-queuing of transactions from a stale work template).
+- "Full" PoW verification only (every node holds the entire epoch dataset in RAM); no light-client mode yet.
+
+## Requirements
+
+- [Rust](https://rustup.rs/) (2021 edition, tested with 1.96+)
 
 ## Build
 
@@ -34,7 +51,7 @@ Ce qui **n'existe pas encore** : un mineur GPU (OpenCL/CUDA), la couche de
 cargo build --release --workspace
 ```
 
-## Lancer un node testnet
+## Run a testnet node
 
 ```bash
 cargo run --release --bin ondris-node -- \
@@ -44,34 +61,34 @@ cargo run --release --bin ondris-node -- \
   --rpc-addr 127.0.0.1:8080
 ```
 
-Pour rejoindre un testnet existant, ajoute `--peer <ip>:30303` (répétable).
+To join an existing testnet, add `--peer <ip>:30303` (repeatable).
 
-## Créer un wallet
+## Create a wallet
 
 ```bash
-cargo run --release --bin ondris-wallet -- new --out mon-wallet.json
+cargo run --release --bin ondris-wallet -- new --out my-wallet.json
 ```
 
-## Miner
+## Mine
 
 ```bash
 cargo run --release --bin ondris-miner -- \
   --node http://127.0.0.1:8080 \
-  --address <adresse-affichée-par-le-wallet> \
+  --address <address-shown-by-the-wallet> \
   --threads 4
 ```
 
-## Envoyer une transaction
+## Send a transaction
 
 ```bash
 cargo run --release --bin ondris-wallet -- send \
-  --wallet mon-wallet.json \
-  --to <adresse-destinataire> \
+  --wallet my-wallet.json \
+  --to <recipient-address> \
   --amount 100000000 \
   --node http://127.0.0.1:8080
 ```
 
-(1 ONDR = 100 000 000 plus petites unités, comme le satoshi pour Bitcoin.)
+(1 ONDR = 100,000,000 smallest units, like satoshis for Bitcoin.)
 
 ## Tests
 
@@ -81,10 +98,12 @@ cargo test --workspace
 
 ## Documentation
 
-- [docs/ALGORITHM.md](docs/ALGORITHM.md) — spec complète de l'algorithme PoW.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — architecture, choix techniques, limitations connues.
-- [docs/WHITEPAPER.md](docs/WHITEPAPER.md) — présentation du projet.
+- [docs/ALGORITHM.md](docs/ALGORITHM.md) — full spec of the PoW algorithm.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — architecture, technical choices, known limitations.
+- [docs/WHITEPAPER.md](docs/WHITEPAPER.md) — project overview.
 
-## Licence
+(Currently written in French; English translations are planned.)
 
-MIT, voir [LICENSE](LICENSE).
+## License
+
+MIT, see [LICENSE](LICENSE).
