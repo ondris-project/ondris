@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ondris — a proof-of-work chain built around memory, not silicon</title>
+<meta name="description" content="Ondris is a GPU-mineable, ASIC-resistant proof-of-work chain. OndrisHash forces every hash to touch a wide, shifting block of memory — unaudited testnet, mainnet targeted for July 25, 2026." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%2312151a'/%3E%3Crect x='3' y='3' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='15' y='9' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='9' y='15' width='6' height='6' fill='%23e08a4b'/%3E%3C/svg%3E" />
+<style>
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__MONO400__) format('woff2');}
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url(data:font/woff2;base64,__MONO600__) format('woff2');}
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:700;font-display:swap;src:url(data:font/woff2;base64,__MONO700__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__SERIF400__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:italic;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__SERIF400I__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:normal;font-weight:600;font-display:swap;src:url(data:font/woff2;base64,__SERIF600__) format('woff2');}
+
+:root{
+  --bg:#EEF0EF; --bg-raised:#E2E6E4; --bg-sunken:#D9DEDB;
+  --text:#1A1E22; --text-mute:#5B646C;
+  --accent:#C1602A; --accent-ink:#FBF3EC;
+  --wire:#C7CDC9; --wire-strong:#AEB6B1;
+  --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
+  --grid-dim: 199,205,201; --grid-hot: 193,96,42;
+  --shadow: 0 1px 0 rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12151A; --bg-raised:#1B212A; --bg-sunken:#0D0F13;
+    --text:#ECE7DB; --text-mute:#8E97A3;
+    --accent:#E08A4B; --accent-ink:#1A1006;
+    --wire:#2C3540; --wire-strong:#404C58;
+    --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
+    --grid-dim: 44,53,64; --grid-hot: 224,138,75;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151A; --bg-raised:#1B212A; --bg-sunken:#0D0F13;
+  --text:#ECE7DB; --text-mute:#8E97A3;
+  --accent:#E08A4B; --accent-ink:#1A1006;
+  --wire:#2C3540; --wire-strong:#404C58;
+  --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
+  --grid-dim: 44,53,64; --grid-hot: 224,138,75;
+  color-scheme: dark;
+}
+:root[data-theme="light"]{
+  --bg:#EEF0EF; --bg-raised:#E2E6E4; --bg-sunken:#D9DEDB;
+  --text:#1A1E22; --text-mute:#5B646C;
+  --accent:#C1602A; --accent-ink:#FBF3EC;
+  --wire:#C7CDC9; --wire-strong:#AEB6B1;
+  --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
+  --grid-dim: 199,205,201; --grid-hot: 193,96,42;
+  color-scheme: light;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Plex Serif', Georgia, 'Iowan Old Style', serif;
+  font-size:1.0625rem;
+  line-height:1.7;
+  transition:background .25s ease, color .25s ease;
+}
+::selection{ background:var(--accent); color:var(--accent-ink); }
+a{ color:inherit; }
+img,svg{ display:block; max-width:100%; }
+button{ font:inherit; color:inherit; }
+
+.container{
+  width:100%;
+  max-width:74rem;
+  margin-inline:auto;
+  padding-inline:clamp(1.25rem, 5vw, 3.5rem);
+}
+h1,h2,h3,.mono{
+  font-family:'Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+  margin:0;
+}
+.eyebrow{
+  font-family:'Plex Mono', ui-monospace, monospace;
+  font-weight:600;
+  font-size:.75rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--text-mute);
+  display:flex;
+  align-items:center;
+  gap:.6em;
+}
+.eyebrow .dot{ width:6px; height:6px; background:var(--accent); flex:none; }
+p{ margin:0; }
+.prose{ max-width:42em; color:var(--text); }
+.prose.mute{ color:var(--text-mute); }
+.num{ font-family:'Plex Mono', monospace; font-variant-numeric:tabular-nums; }
+
+/* ---------- nav ---------- */
+.nav{
+  position:sticky; top:0; z-index:40;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(10px) saturate(1.1);
+  -webkit-backdrop-filter:blur(10px) saturate(1.1);
+  border-bottom:1px solid var(--wire);
+}
+.nav-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:1.5rem; padding-block:.85rem;
+}
+.wordmark{
+  font-family:'Plex Mono', monospace; font-weight:700; font-size:1rem;
+  letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.55rem;
+}
+.wordmark .glyph{ width:16px; height:16px; position:relative; flex:none; }
+.wordmark .glyph i{ position:absolute; width:7px; height:7px; background:var(--accent); }
+.wordmark .glyph i:nth-child(1){ top:0; left:0; }
+.wordmark .glyph i:nth-child(2){ top:0; right:0; background:var(--wire-strong); }
+.wordmark .glyph i:nth-child(3){ bottom:0; left:0; background:var(--wire-strong); }
+.nav-links{ display:flex; align-items:center; gap:clamp(1rem,2.4vw,2rem); }
+.nav-links a{
+  font-family:'Plex Mono', monospace; font-size:.8125rem; letter-spacing:.03em;
+  text-decoration:none; color:var(--text-mute); white-space:nowrap;
+}
+.nav-links a:hover{ color:var(--text); }
+.nav-links a.primary{ color:var(--text); border:1px solid var(--wire-strong); padding:.4em .85em; }
+.nav-links a.primary:hover{ border-color:var(--accent); color:var(--accent); }
+.theme-btn{
+  appearance:none; background:transparent; border:1px solid var(--wire-strong);
+  width:2rem; height:2rem; display:grid; place-items:center; cursor:pointer;
+}
+.theme-btn:hover{ border-color:var(--accent); }
+.theme-btn svg{ width:14px; height:14px; stroke:var(--text); fill:none; stroke-width:1.6; }
+.skip-hidden{ display:none; }
+@media (max-width: 46rem){
+  .nav-links a:not(.primary):not(.theme-btn-wrap){ display:none; }
+}
+
+/* ---------- hero ---------- */
+.hero{ position:relative; overflow:hidden; border-bottom:1px solid var(--wire); }
+.hero-canvas-wrap{
+  position:absolute; inset:0; z-index:0;
+  -webkit-mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+  mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+}
+#grid{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+.hero-inner{
+  position:relative; z-index:1;
+  padding-block:clamp(4rem, 12vw, 7.5rem) clamp(3rem,8vw,5rem);
+}
+.hero-inner .eyebrow{ margin-bottom:1.4rem; }
+.hero h1{
+  font-size:clamp(3.2rem, 10vw, 7.75rem);
+  line-height:.92;
+  margin-bottom:1.5rem;
+}
+.hero-sub{
+  font-family:'Plex Serif', serif; font-size:clamp(1.05rem,1.6vw,1.25rem);
+  line-height:1.65; max-width:40em; color:var(--text);
+  margin-bottom:2.25rem;
+}
+.hero-sub em{ font-style:italic; color:var(--accent); }
+.cta-row{ display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin-bottom:1.6rem; }
+.btn{
+  font-family:'Plex Mono', monospace; font-weight:600; font-size:.85rem;
+  letter-spacing:.02em; text-decoration:none; display:inline-flex; align-items:center; gap:.5em;
+  padding:.85em 1.3em; border:1px solid var(--text);
+}
+.btn.solid{ background:var(--text); color:var(--bg); }
+.btn.solid:hover{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.btn.ghost{ border-color:var(--wire-strong); color:var(--text); }
+.btn.ghost:hover{ border-color:var(--accent); color:var(--accent); }
+.hero-meta{ font-size:.875rem; color:var(--text-mute); max-width:38em; }
+.hero-meta strong{ color:var(--text); font-weight:600; }
+
+/* live stat strip */
+.stat-strip{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--wire);
+}
+.stat{
+  padding:1.25rem clamp(1.25rem,3vw,1.75rem);
+  border-right:1px solid var(--wire);
+}
+.stat:last-child{ border-right:none; }
+.stat-label{ font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mute); font-family:'Plex Mono',monospace; margin-bottom:.4rem; display:block; }
+.stat-value{ font-family:'Plex Mono',monospace; font-weight:700; font-size:clamp(1.1rem,2.4vw,1.6rem); font-variant-numeric:tabular-nums; }
+.stat-value.is-loading{ color:var(--text-mute); }
+.live-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-mute); display:inline-block; margin-right:.5em; }
+.live-dot.is-live{ background:var(--status-good); box-shadow:0 0 0 3px color-mix(in srgb, var(--status-good) 25%, transparent); }
+@media (max-width: 46rem){
+  .stat-strip{ grid-template-columns:repeat(2,1fr); }
+  .stat:nth-child(2){ border-right:none; }
+}
+
+/* ---------- sections ---------- */
+section{ padding-block:clamp(3.5rem,9vw,6.5rem); }
+.section-raised{ background:var(--bg-raised); border-block:1px solid var(--wire); }
+.section-head{ display:flex; flex-direction:column; gap:1rem; margin-bottom:clamp(2.25rem,5vw,3.25rem); max-width:46em; }
+.section-head h2{ font-size:clamp(1.75rem,3.6vw,2.6rem); line-height:1.08; }
+
+/* how it works */
+.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(1.5rem,3vw,2.25rem); }
+.step{ border-top:2px solid var(--wire-strong); padding-top:1.25rem; }
+.step-num{ font-family:'Plex Mono',monospace; font-weight:700; color:var(--accent); font-size:.9rem; display:block; margin-bottom:.75rem; }
+.step h3{ font-size:1.15rem; margin-bottom:.65rem; }
+.step p{ color:var(--text-mute); font-size:.95rem; line-height:1.65; }
+.spec-link{ margin-top:2.5rem; }
+.spec-link a{ font-family:'Plex Mono',monospace; font-size:.85rem; text-decoration:none; color:var(--text); border-bottom:1px solid var(--wire-strong); padding-bottom:.15em; }
+.spec-link a:hover{ color:var(--accent); border-color:var(--accent); }
+@media (max-width: 50rem){ .steps{ grid-template-columns:1fr; } }
+
+/* why gpu two-column */
+.split{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(2rem,4vw,3.5rem); align-items:start; }
+.split-col{ padding:1.75rem; background:var(--bg); border:1px solid var(--wire); }
+.split-col h3{ font-size:1.05rem; margin-bottom:1rem; }
+.split-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.9rem; }
+.split-col li{ font-size:.95rem; color:var(--text-mute); padding-left:1.1em; position:relative; }
+.split-col li::before{ content:""; position:absolute; left:0; top:.55em; width:5px; height:5px; background:var(--wire-strong); }
+.split-col.resist li::before{ background:var(--accent); }
+@media (max-width: 50rem){ .split{ grid-template-columns:1fr; } }
+
+/* status table */
+.status-table{ width:100%; border-collapse:collapse; font-size:.9375rem; }
+.status-table th{
+  text-align:left; font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--text-mute); font-weight:600;
+  padding-block:.75rem; border-bottom:1px solid var(--wire-strong);
+}
+.status-table td{ padding-block:.9rem; border-bottom:1px solid var(--wire); vertical-align:top; }
+.status-table tr:last-child td{ border-bottom:none; }
+.status-table td:first-child{ font-family:'Plex Mono',monospace; font-size:.875rem; padding-right:1.5rem; }
+.pill{
+  display:inline-flex; align-items:center; gap:.5em; font-family:'Plex Mono',monospace;
+  font-size:.8125rem; white-space:nowrap;
+}
+.pill::before{ content:""; width:6px; height:6px; flex:none; }
+.pill.good::before{ background:var(--status-good); }
+.pill.good{ color:var(--status-good); }
+.pill.warn::before{ background:var(--status-warn); }
+.pill.warn{ color:var(--status-warn); }
+.pill.off::before{ background:var(--status-off); }
+.pill.off{ color:var(--status-off); }
+.table-wrap{ overflow-x:auto; }
+.status-callout{
+  margin-top:2rem; padding:1.25rem 1.5rem; border-left:2px solid var(--accent);
+  background:var(--bg); font-size:.9rem; color:var(--text-mute); max-width:52em;
+}
+.status-callout strong{ color:var(--text); }
+
+/* get started */
+.getstarted-grid{ display:grid; grid-template-columns:1.05fr 1fr; gap:clamp(2rem,4vw,3rem); align-items:start; }
+.terminal{ background:var(--bg-sunken); border:1px solid var(--wire); }
+.terminal-bar{
+  display:flex; align-items:center; gap:.4rem; padding:.6rem .9rem; border-bottom:1px solid var(--wire);
+}
+.terminal-bar i{ width:8px; height:8px; background:var(--wire-strong); }
+.terminal-bar span{ font-family:'Plex Mono',monospace; font-size:.7rem; color:var(--text-mute); margin-left:.5rem; letter-spacing:.05em; }
+.terminal pre{
+  margin:0; padding:1.25rem 1.4rem; overflow-x:auto;
+  font-family:'Plex Mono',monospace; font-size:.83rem; line-height:2;
+}
+.terminal .c-prompt{ color:var(--text-mute); }
+.terminal .c-cmd{ color:var(--text); }
+.terminal .c-flag{ color:var(--accent); }
+.getstarted-note{ font-size:.95rem; color:var(--text-mute); }
+.getstarted-note a{ color:var(--text); border-bottom:1px solid var(--wire-strong); text-decoration:none; }
+.getstarted-note a:hover{ color:var(--accent); border-color:var(--accent); }
+@media (max-width: 55rem){ .getstarted-grid{ grid-template-columns:1fr; } }
+
+/* footer */
+footer{ border-top:1px solid var(--wire); }
+.footer-top{
+  display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:2.5rem;
+  padding-block:clamp(2.5rem,6vw,4rem);
+}
+.footer-brand p{ color:var(--text-mute); font-size:.9rem; max-width:28em; margin-top:.85rem; }
+.footer-col h4{
+  font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-mute); margin-bottom:1rem; font-weight:600;
+}
+.footer-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.65rem; }
+.footer-col a{ font-size:.9rem; text-decoration:none; color:var(--text); }
+.footer-col a:hover{ color:var(--accent); }
+.footer-col .mono-line{ font-family:'Plex Mono',monospace; font-size:.8125rem; color:var(--text-mute); }
+.footer-bottom{
+  border-top:1px solid var(--wire); padding-block:1.5rem;
+  display:flex; flex-wrap:wrap; justify-content:space-between; gap:1rem;
+  font-size:.8rem; color:var(--text-mute);
+}
+@media (max-width: 50rem){ .footer-top{ grid-template-columns:1fr 1fr; } .footer-brand{ grid-column:1/-1; } }
+
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-row">
+    <a href="#top" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+    <div class="nav-links">
+      <a href="#how">Algorithm</a>
+      <a href="#status">Status</a>
+      <a href="#get-started">Get started</a>
+      <a class="primary" href="https://github.com/jorysanicet410-sketch/ondris" target="_blank" rel="noopener">Source ↗</a>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle color theme" title="Toggle color theme">
+        <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="hero" id="top">
+  <div class="hero-canvas-wrap"><canvas id="grid"></canvas></div>
+  <div class="container hero-inner">
+    <p class="eyebrow"><span class="dot"></span>Proof-of-work · unaudited testnet</p>
+    <h1>ONDRIS</h1>
+    <p class="hero-sub">A proof-of-work chain where every hash has to touch a wide, shifting block of memory. That's the entire design: memory is the one resource a graphics card already has <em>in abundance</em> — and the one an ASIC would have to buy from scratch, at a cost its speed can't make back.</p>
+    <div class="cta-row">
+      <a class="btn solid" href="https://github.com/jorysanicet410-sketch/ondris" target="_blank" rel="noopener">Read the source →</a>
+      <a class="btn ghost" href="#get-started">Run a node</a>
+    </div>
+    <p class="hero-meta">Mainnet target — <strong>25 July 2026</strong>. The algorithm, node, wallet and CPU miner work today; the audit and fork handling don't exist yet. See exactly what's done in <a href="#status" style="color:var(--text);border-bottom:1px solid var(--wire-strong);text-decoration:none;">Status</a> before you point real hardware at it.</p>
+  </div>
+  <div class="stat-strip">
+    <div class="stat"><span class="stat-label"><span class="live-dot" id="liveDot"></span>Chain height</span><span class="stat-value is-loading" id="statHeight">—</span></div>
+    <div class="stat"><span class="stat-label">Difficulty</span><span class="stat-value is-loading" id="statDiff">—</span></div>
+    <div class="stat"><span class="stat-label">Peers</span><span class="stat-value is-loading" id="statPeers">—</span></div>
+    <div class="stat"><span class="stat-label">Block reward</span><span class="stat-value num">50 ONDR</span></div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>How it works</p>
+      <h2>Three steps, and none of them are a shortcut.</h2>
+      <p class="prose mute">OndrisHash doesn't invent a new cryptographic primitive — it combines BLAKE3, already audited and standardized, into an original arrangement of memory that's expensive to fake.</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <h3>Epoch dataset</h3>
+        <p>Every 2,048 blocks the network derives a new dataset — tens of megabytes generated from the hash of a block that's already been mined. Nobody can precompute it ahead of time, because it doesn't exist until the chain writes it.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <h3>Scratchpad mixing</h3>
+        <p>Mining fills a working block of memory with slices of that dataset, then mixes it for eight rounds where each step reads what the last one just wrote. You can't parallelize around that without holding the whole thing in memory at once.</p>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <h3>Validation</h3>
+        <p>The result only counts if it comes out below the network's current target — a plain 256-bit comparison any node can check in microseconds, whether or not it owns a GPU.</p>
+      </div>
+    </div>
+    <p class="spec-link"><a href="https://github.com/jorysanicet410-sketch/ondris/blob/master/docs/ALGORITHM.md" target="_blank" rel="noopener">Read the full algorithm spec →</a></p>
+  </div>
+</section>
+
+<section class="section-raised">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>Why this favors a GPU</p>
+      <h2>The bottleneck is bandwidth, not brains.</h2>
+    </div>
+    <div class="split">
+      <div class="split-col">
+        <h3>What the algorithm rewards</h3>
+        <ul>
+          <li>A wide memory bus moving many gigabytes per second — ordinary on a graphics card.</li>
+          <li>Thousands of threads that can each hold their own slice of the scratchpad.</li>
+          <li>Hardware you already own and can repurpose the moment you stop mining.</li>
+        </ul>
+      </div>
+      <div class="split-col resist">
+        <h3>What it resists</h3>
+        <ul>
+          <li>A dedicated ASIC would need to embed the same fast VRAM a GPU already ships with.</li>
+          <li>That erases most of an ASIC's usual cost and power advantage before it even starts hashing.</li>
+          <li>A CPU can still verify a block in the time it takes to read this sentence — it just can't mine competitively.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="status">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>Status</p>
+      <h2>What's actually built, stated plainly.</h2>
+      <p class="prose mute">No hedging: this is the same table that ships in the repo's whitepaper, kept in sync with the code, not the marketing.</p>
+    </div>
+    <div class="table-wrap">
+      <table class="status-table">
+        <thead><tr><th>Component</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>OndrisHash algorithm — CPU reference</td><td><span class="pill good">Functional, unaudited</span></td></tr>
+          <tr><td>Node — chain + P2P + RPC</td><td><span class="pill good">Functional, testnet only</span></td></tr>
+          <tr><td>CLI wallet</td><td><span class="pill good">Functional</span></td></tr>
+          <tr><td>Reference CPU miner</td><td><span class="pill good">Functional</span></td></tr>
+          <tr><td>GPU miner — OpenCL / CUDA</td><td><span class="pill off">Not started</span></td></tr>
+          <tr><td>Fork / reorg handling</td><td><span class="pill off">Not implemented</span></td></tr>
+          <tr><td>Independent cryptographic audit</td><td><span class="pill warn">Not done</span></td></tr>
+          <tr><td>"Useful compute" layer</td><td><span class="pill off">Research-grade, not implemented</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="status-callout"><strong>Mainnet is targeted for 25 July 2026.</strong> The rows marked not implemented or not done will very likely still read that way on that date — the date is a target, not a certificate of safety. Treat Ondris as early, unaudited software before and after it.</p>
+  </div>
+</section>
+
+<section class="section-raised" id="get-started">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>Get started</p>
+      <h2>Run the node, then point a GPU at it.</h2>
+    </div>
+    <div class="getstarted-grid">
+      <div class="terminal">
+        <div class="terminal-bar"><i></i><i></i><i></i><span>testnet</span></div>
+        <pre><code><span class="c-prompt">$ </span><span class="c-cmd">cargo build --release --workspace</span>
+
+<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-node</span> <span class="c-flag">--</span> <span class="c-flag">--peer</span> 51.89.226.44:30303
+
+<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-wallet</span> <span class="c-flag">--</span> new <span class="c-flag">--out</span> my-wallet.json
+
+<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-miner</span> <span class="c-flag">--</span> <span class="c-flag">--node</span> http://127.0.0.1:8080 <span class="c-flag">--address</span> &lt;your-address&gt; <span class="c-flag">--threads</span> 4</code></pre>
+      </div>
+      <div class="getstarted-note">
+        <p class="prose mute" style="margin-bottom:1.1rem;">Needs Rust (edition 2021, 1.96+). The commands above build every binary, join the public testnet seed, create a wallet with an encrypted keystore, and start mining with all available CPU threads — the GPU kernel is still ahead on the roadmap, so this runs the reference CPU miner today.</p>
+        <p class="prose mute">Full walkthrough, RPC reference, and known limitations are in the <a href="https://github.com/jorysanicet410-sketch/ondris#readme" target="_blank" rel="noopener">README</a> and <a href="https://github.com/jorysanicet410-sketch/ondris/blob/master/docs/ARCHITECTURE.md" target="_blank" rel="noopener">architecture notes</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href="#top" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+      <p>A GPU-mineable, ASIC-resistant proof-of-work chain built around memory bandwidth instead of raw compute. Unaudited testnet software — not investment advice.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/jorysanicet410-sketch/ondris" target="_blank" rel="noopener">Source code</a></li>
+        <li><a href="https://github.com/jorysanicet410-sketch/ondris/blob/master/docs/ALGORITHM.md" target="_blank" rel="noopener">Algorithm spec</a></li>
+        <li><a href="https://github.com/jorysanicet410-sketch/ondris/blob/master/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a></li>
+        <li><a href="https://github.com/jorysanicet410-sketch/ondris/blob/master/docs/WHITEPAPER.md" target="_blank" rel="noopener">Whitepaper</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Network</h4>
+      <ul>
+        <li class="mono-line">Seed 51.89.226.44:30303</li>
+        <li class="mono-line">RPC 51.89.226.44:8080</li>
+        <li class="mono-line">Mainnet target 2026-07-25</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Ondris contributors · MIT licensed</span>
+    <span>Experimental, unaudited software provided as-is. Mine and transact at your own risk.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  var stored = localStorage.getItem('ondris-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function(){
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('ondris-theme', next);
+  });
+})();
+
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var canvas = document.getElementById('grid');
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var cell = 17, cols, rows, heat, wrap;
+  wrap = canvas.parentElement;
+
+  function styleNum(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function resize(){
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    cols = Math.ceil(w / cell) + 1;
+    rows = Math.ceil(h / cell) + 1;
+    heat = new Float32Array(cols * rows);
+    if (reduceMotion) seedStatic();
+  }
+
+  function idx(x,y){ return y*cols+x; }
+
+  function seedStatic(){
+    for (var i=0;i<Math.floor(cols*rows*0.05);i++){
+      heat[Math.floor(Math.random()*heat.length)] = Math.random()*0.6+0.2;
+    }
+  }
+
+  function spawnCluster(){
+    var cx = (Math.random()*cols)|0, cy = (Math.random()*rows)|0;
+    var n = 3 + ((Math.random()*4)|0);
+    var x = cx, y = cy;
+    for (var i=0;i<n;i++){
+      x = Math.min(cols-1, Math.max(0, x + ((Math.random()*3)|0) - 1));
+      y = Math.min(rows-1, Math.max(0, y + ((Math.random()*3)|0) - 1));
+      heat[idx(x,y)] = 1;
+    }
+  }
+
+  function spawnDistant(){
+    heat[idx((Math.random()*cols)|0, (Math.random()*rows)|0)] = 1;
+  }
+
+  var lastCluster = 0, lastDistant = 0, lastFrame = 0;
+
+  function draw(t){
+    if (reduceMotion){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      renderCells();
+      return;
+    }
+    requestAnimationFrame(draw);
+    if (t - lastFrame < 33) return; // ~30fps cap
+    lastFrame = t;
+    if (t - lastCluster > 260){ spawnCluster(); lastCluster = t; }
+    if (t - lastDistant > 900){ spawnDistant(); lastDistant = t; }
+    for (var i=0;i<heat.length;i++){ heat[i] *= 0.925; }
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    renderCells();
+  }
+
+  function renderCells(){
+    var dim = styleNum('--grid-dim') || '100,100,100';
+    var hot = styleNum('--grid-hot') || '224,138,75';
+    var c = cell*dpr, gap = 2*dpr, size = c-gap;
+    for (var y=0;y<rows;y++){
+      for (var x=0;x<cols;x++){
+        var v = heat[idx(x,y)];
+        if (v < 0.03) continue;
+        var rgb = v > 0.5 ? hot : dim;
+        ctx.globalAlpha = Math.min(1, v*0.5 + (v>0.5?0.5:0.12));
+        ctx.fillStyle = 'rgb(' + rgb + ')';
+        if (v > 0.6){
+          ctx.shadowBlur = 8*dpr; ctx.shadowColor = 'rgba(' + hot + ',0.9)';
+        } else {
+          ctx.shadowBlur = 0;
+        }
+        ctx.fillRect(x*c+gap/2, y*c+gap/2, size, size);
+      }
+    }
+    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  if (reduceMotion){ renderCells(); } else { requestAnimationFrame(draw); }
+})();
+
+(function(){
+  var RPC = 'http://51.89.226.44:8080/chain/info';
+  var elHeight = document.getElementById('statHeight');
+  var elDiff = document.getElementById('statDiff');
+  var elPeers = document.getElementById('statPeers');
+  var dot = document.getElementById('liveDot');
+
+  function fmt(n){ return Number(n).toLocaleString('en-US'); }
+
+  function load(){
+    fetch(RPC, { mode:'cors' }).then(function(r){
+      if (!r.ok) throw new Error('bad response');
+      return r.json();
+    }).then(function(d){
+      elHeight.textContent = fmt(d.height);
+      elDiff.textContent = fmt(d.next_difficulty);
+      elPeers.textContent = fmt(d.peer_count);
+      elHeight.classList.remove('is-loading');
+      elDiff.classList.remove('is-loading');
+      elPeers.classList.remove('is-loading');
+      dot.classList.add('is-live');
+    }).catch(function(){
+      elHeight.textContent = 'n/a';
+      elDiff.textContent = 'n/a';
+      elPeers.textContent = 'n/a';
+    });
+  }
+  load();
+  setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>

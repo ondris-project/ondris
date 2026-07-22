@@ -19,6 +19,7 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
+use tower_http::cors::{Any, CorsLayer};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -154,6 +155,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/work", get(get_work))
         .route("/block/submit", post(submit_block))
         .route("/tx/submit", post(submit_tx))
+        .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any))
         .with_state(state);
 
     tracing::info!("RPC API listening on http://{}", args.rpc_addr);

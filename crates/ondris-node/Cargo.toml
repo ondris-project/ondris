@@ -15,6 +15,7 @@ ondris-pow = { path = "../ondris-pow" }
 ondris-primitives = { path = "../ondris-primitives" }
 tokio.workspace = true
 axum.workspace = true
+tower-http.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
