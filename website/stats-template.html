@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ondris — live network stats</title>
+<meta name="description" content="Live Ondris testnet statistics pulled directly from the public node's RPC: chain height, difficulty, peers, block times, and recent blocks." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%2312151a'/%3E%3Crect x='3' y='3' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='15' y='9' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='9' y='15' width='6' height='6' fill='%23e08a4b'/%3E%3C/svg%3E" />
+<style>
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__MONO400__) format('woff2');}
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:600;font-display:swap;src:url(data:font/woff2;base64,__MONO600__) format('woff2');}
+@font-face{font-family:'Plex Mono';font-style:normal;font-weight:700;font-display:swap;src:url(data:font/woff2;base64,__MONO700__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__SERIF400__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:italic;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,__SERIF400I__) format('woff2');}
+@font-face{font-family:'Plex Serif';font-style:normal;font-weight:600;font-display:swap;src:url(data:font/woff2;base64,__SERIF600__) format('woff2');}
+
+:root{
+  --bg:#EEF0EF; --bg-raised:#E2E6E4; --bg-sunken:#D9DEDB;
+  --text:#1A1E22; --text-mute:#5B646C;
+  --accent:#C1602A; --accent-ink:#FBF3EC;
+  --wire:#C7CDC9; --wire-strong:#AEB6B1;
+  --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
+  --shadow: 0 1px 0 rgba(0,0,0,.04);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#12151A; --bg-raised:#1B212A; --bg-sunken:#0D0F13;
+    --text:#ECE7DB; --text-mute:#8E97A3;
+    --accent:#E08A4B; --accent-ink:#1A1006;
+    --wire:#2C3540; --wire-strong:#404C58;
+    --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12151A; --bg-raised:#1B212A; --bg-sunken:#0D0F13;
+  --text:#ECE7DB; --text-mute:#8E97A3;
+  --accent:#E08A4B; --accent-ink:#1A1006;
+  --wire:#2C3540; --wire-strong:#404C58;
+  --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
+  color-scheme: dark;
+}
+:root[data-theme="light"]{
+  --bg:#EEF0EF; --bg-raised:#E2E6E4; --bg-sunken:#D9DEDB;
+  --text:#1A1E22; --text-mute:#5B646C;
+  --accent:#C1602A; --accent-ink:#FBF3EC;
+  --wire:#C7CDC9; --wire-strong:#AEB6B1;
+  --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
+  color-scheme: light;
+}
+
+*,*::before,*::after{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Plex Serif', Georgia, 'Iowan Old Style', serif;
+  font-size:1.0625rem;
+  line-height:1.7;
+  transition:background .25s ease, color .25s ease;
+}
+::selection{ background:var(--accent); color:var(--accent-ink); }
+a{ color:inherit; }
+img,svg{ display:block; max-width:100%; }
+button{ font:inherit; color:inherit; }
+
+.container{
+  width:100%;
+  max-width:74rem;
+  margin-inline:auto;
+  padding-inline:clamp(1.25rem, 5vw, 3.5rem);
+}
+h1,h2,h3,.mono{
+  font-family:'Plex Mono', ui-monospace, 'SF Mono', Consolas, monospace;
+  font-weight:700;
+  letter-spacing:-0.01em;
+  text-wrap:balance;
+  margin:0;
+}
+.eyebrow{
+  font-family:'Plex Mono', ui-monospace, monospace;
+  font-weight:600;
+  font-size:.75rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--text-mute);
+  display:flex;
+  align-items:center;
+  gap:.6em;
+}
+.eyebrow .dot{ width:6px; height:6px; background:var(--accent); flex:none; }
+p{ margin:0; }
+.prose{ max-width:42em; color:var(--text); }
+.prose.mute{ color:var(--text-mute); }
+.num{ font-family:'Plex Mono', monospace; font-variant-numeric:tabular-nums; }
+
+/* ---------- nav (identical to the main site) ---------- */
+.nav{
+  position:sticky; top:0; z-index:40;
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(10px) saturate(1.1);
+  -webkit-backdrop-filter:blur(10px) saturate(1.1);
+  border-bottom:1px solid var(--wire);
+}
+.nav-row{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:1.5rem; padding-block:.85rem;
+}
+.wordmark{
+  font-family:'Plex Mono', monospace; font-weight:700; font-size:1rem;
+  letter-spacing:.04em; text-decoration:none; display:flex; align-items:center; gap:.55rem;
+}
+.wordmark .glyph{ width:16px; height:16px; position:relative; flex:none; }
+.wordmark .glyph i{ position:absolute; width:7px; height:7px; background:var(--accent); }
+.wordmark .glyph i:nth-child(1){ top:0; left:0; }
+.wordmark .glyph i:nth-child(2){ top:0; right:0; background:var(--wire-strong); }
+.wordmark .glyph i:nth-child(3){ bottom:0; left:0; background:var(--wire-strong); }
+.nav-links{ display:flex; align-items:center; gap:clamp(1rem,2.4vw,2rem); }
+.nav-links a{
+  font-family:'Plex Mono', monospace; font-size:.8125rem; letter-spacing:.03em;
+  text-decoration:none; color:var(--text-mute); white-space:nowrap;
+}
+.nav-links a:hover{ color:var(--text); }
+.nav-links a.current{ color:var(--accent); }
+.nav-links a.primary{ color:var(--text); border:1px solid var(--wire-strong); padding:.4em .85em; }
+.nav-links a.primary:hover{ border-color:var(--accent); color:var(--accent); }
+.theme-btn{
+  appearance:none; background:transparent; border:1px solid var(--wire-strong);
+  width:2rem; height:2rem; display:grid; place-items:center; cursor:pointer;
+}
+.theme-btn:hover{ border-color:var(--accent); }
+.theme-btn svg{ width:14px; height:14px; stroke:var(--text); fill:none; stroke-width:1.6; }
+@media (max-width: 46rem){
+  .nav-links a:not(.primary):not(.theme-btn-wrap){ display:none; }
+}
+
+/* ---------- dashboard header ---------- */
+.dash-header{ border-bottom:1px solid var(--wire); padding-block:clamp(2.5rem,6vw,3.75rem) clamp(2rem,4vw,2.5rem); }
+.dash-header h1{ font-size:clamp(2rem,5vw,3rem); line-height:1.05; margin-block:1rem .75rem; }
+.dash-header .prose{ max-width:44em; }
+.dash-meta{
+  display:flex; align-items:center; gap:.6em; margin-top:1.25rem;
+  font-family:'Plex Mono',monospace; font-size:.8125rem; color:var(--text-mute);
+}
+.live-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-mute); display:inline-block; flex:none; }
+.live-dot.is-live{ background:var(--status-good); box-shadow:0 0 0 3px color-mix(in srgb, var(--status-good) 25%, transparent); }
+.live-dot.is-down{ background:var(--status-warn); }
+
+/* ---------- KPI tiles ---------- */
+.kpi-section{ padding-block:clamp(2rem,4vw,2.75rem); }
+.kpi-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  background:var(--wire); border:1px solid var(--wire);
+}
+.kpi{ background:var(--bg); padding:1.25rem 1.4rem; min-width:0; }
+.kpi-label{
+  font-size:.6875rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mute);
+  font-family:'Plex Mono',monospace; margin-bottom:.5rem; display:block;
+}
+.kpi-value{
+  font-family:'Plex Mono',monospace; font-weight:700; font-size:clamp(1.1rem,2.2vw,1.5rem);
+  font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.kpi-value.is-loading{ color:var(--text-mute); font-weight:400; }
+.kpi-sub{ font-size:.75rem; color:var(--text-mute); margin-top:.35rem; }
+.kpi .pill{ font-size:.95rem; }
+@media (max-width: 58rem){ .kpi-grid{ grid-template-columns:repeat(2,1fr); } }
+
+/* ---------- chart ---------- */
+section{ padding-block:clamp(2.5rem,5vw,3.5rem); }
+.section-raised{ background:var(--bg-raised); border-block:1px solid var(--wire); }
+.section-head{ display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.75rem; max-width:46em; }
+.section-head h2{ font-size:clamp(1.4rem,2.6vw,1.85rem); line-height:1.15; }
+
+.chart-card{ background:var(--bg); border:1px solid var(--wire); padding:1.5rem clamp(1.25rem,3vw,2rem) 1.25rem; }
+.chart-empty{
+  display:flex; flex-direction:column; align-items:flex-start; gap:.5rem;
+  padding-block:2rem; color:var(--text-mute); font-size:.9rem; max-width:36em;
+}
+.chart-empty strong{ color:var(--text); }
+.chart-wrap{ position:relative; }
+.chart-svg{ width:100%; height:220px; display:block; overflow:visible; }
+.chart-bar{ fill:var(--accent); }
+.chart-bar:hover, .chart-bar.is-hot{ fill:var(--text); }
+.chart-ref-line{ stroke:var(--text-mute); stroke-width:1; stroke-dasharray:3,3; }
+.chart-ref-label{ font-family:'Plex Mono',monospace; font-size:.6875rem; fill:var(--text-mute); }
+.chart-axis-label{ font-family:'Plex Mono',monospace; font-size:.6875rem; fill:var(--text-mute); }
+.chart-legend{
+  display:flex; flex-wrap:wrap; gap:1.25rem; margin-top:.9rem; padding-top:.9rem;
+  border-top:1px solid var(--wire); font-size:.8rem; color:var(--text-mute);
+}
+.chart-legend span{ display:inline-flex; align-items:center; gap:.5em; }
+.chart-legend i{ width:10px; height:10px; flex:none; }
+.chart-legend .sw-bar{ background:var(--accent); }
+.chart-legend .sw-ref{ border-top:1px dashed var(--text-mute); width:12px; height:0; }
+.chart-tooltip{
+  position:absolute; pointer-events:none; opacity:0; transition:opacity .1s ease;
+  background:var(--text); color:var(--bg); font-family:'Plex Mono',monospace; font-size:.75rem;
+  padding:.4em .65em; white-space:nowrap; transform:translate(-50%,-115%); z-index:5;
+}
+.chart-tooltip.is-visible{ opacity:1; }
+
+/* ---------- blocks table ---------- */
+.table-wrap{ overflow-x:auto; }
+.blocks-table{ width:100%; border-collapse:collapse; font-size:.875rem; }
+.blocks-table th{
+  text-align:left; font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--text-mute); font-weight:600;
+  padding-block:.75rem; border-bottom:1px solid var(--wire-strong); white-space:nowrap;
+}
+.blocks-table td{
+  padding-block:.85rem; padding-right:1.25rem; border-bottom:1px solid var(--wire);
+  vertical-align:middle; white-space:nowrap;
+}
+.blocks-table tr:last-child td{ border-bottom:none; }
+.blocks-table td.mono, .blocks-table th.mono{ font-family:'Plex Mono',monospace; }
+.blocks-table .genesis-tag{
+  font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.06em;
+  color:var(--text-mute); text-transform:uppercase; margin-left:.6em;
+}
+.empty-note{ color:var(--text-mute); font-size:.9rem; padding-block:1.5rem; }
+
+.pill{
+  display:inline-flex; align-items:center; gap:.5em; font-family:'Plex Mono',monospace;
+  font-size:.8125rem; white-space:nowrap;
+}
+.pill::before{ content:""; width:6px; height:6px; flex:none; border-radius:50%; }
+.pill.good::before{ background:var(--status-good); }
+.pill.good{ color:var(--status-good); }
+.pill.warn::before{ background:var(--status-warn); }
+.pill.warn{ color:var(--status-warn); }
+.pill.off::before{ background:var(--status-off); }
+.pill.off{ color:var(--status-off); }
+
+.note-callout{
+  margin-top:1.75rem; padding:1.1rem 1.4rem; border-left:2px solid var(--wire-strong);
+  background:var(--bg); font-size:.85rem; color:var(--text-mute); max-width:52em;
+}
+.note-callout strong{ color:var(--text); }
+
+/* ---------- footer (identical to the main site) ---------- */
+footer{ border-top:1px solid var(--wire); }
+.footer-top{
+  display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:2.5rem;
+  padding-block:clamp(2.5rem,6vw,4rem);
+}
+.footer-brand p{ color:var(--text-mute); font-size:.9rem; max-width:28em; margin-top:.85rem; }
+.footer-col h4{
+  font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--text-mute); margin-bottom:1rem; font-weight:600;
+}
+.footer-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.65rem; }
+.footer-col a{ font-size:.9rem; text-decoration:none; color:var(--text); }
+.footer-col a:hover{ color:var(--accent); }
+.footer-col .mono-line{ font-family:'Plex Mono',monospace; font-size:.8125rem; color:var(--text-mute); }
+.footer-bottom{
+  border-top:1px solid var(--wire); padding-block:1.5rem;
+  display:flex; flex-wrap:wrap; justify-content:space-between; gap:1rem;
+  font-size:.8rem; color:var(--text-mute);
+}
+@media (max-width: 50rem){ .footer-top{ grid-template-columns:1fr 1fr; } .footer-brand{ grid-column:1/-1; } }
+
+@media (prefers-reduced-motion: reduce){ *{ animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-row">
+    <a href="index.html" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+    <div class="nav-links">
+      <a href="index.html#how">Algorithm</a>
+      <a href="index.html#status">Status</a>
+      <a href="index.html#get-started">Get started</a>
+      <a class="current" href="stats.html">Network</a>
+      <a class="primary" href="https://github.com/ondris-project/ondris" target="_blank" rel="noopener">Source ↗</a>
+      <button class="theme-btn" id="themeBtn" aria-label="Toggle color theme" title="Toggle color theme">
+        <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<header class="dash-header">
+  <div class="container">
+    <p class="eyebrow"><span class="dot"></span>Testnet · live RPC</p>
+    <h1>Network</h1>
+    <p class="prose mute">Pulled directly from the public node's RPC (<code>51.89.226.44:8080</code>) — no aggregation, no caching, no separate indexer. What's below is what that one node currently believes about the chain, refreshed automatically every 15 seconds.</p>
+    <div class="dash-meta"><span class="live-dot" id="liveDot"></span><span id="lastUpdated">connecting…</span></div>
+  </div>
+</header>
+
+<section class="kpi-section">
+  <div class="container">
+    <div class="kpi-grid">
+      <div class="kpi">
+        <span class="kpi-label">Chain height</span>
+        <span class="kpi-value is-loading num" id="kpiHeight">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Current difficulty</span>
+        <span class="kpi-value is-loading num" id="kpiDiff">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Peers (this node)</span>
+        <span class="kpi-value is-loading" id="kpiPeers">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Est. network hashrate</span>
+        <span class="kpi-value is-loading" id="kpiHashrate">—</span>
+        <div class="kpi-sub" id="kpiHashrateSub">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Tip block hash</span>
+        <span class="kpi-value is-loading num" id="kpiTip" title="">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Target block time</span>
+        <span class="kpi-value num">30s</span>
+        <div class="kpi-sub">configured, not live-measured</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Block reward</span>
+        <span class="kpi-value num">50 ONDR</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Retarget window</span>
+        <span class="kpi-value num">60 blocks</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-raised">
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>Block times</p>
+      <h2>Seconds between the last blocks, against the 30s target.</h2>
+    </div>
+    <div class="chart-card">
+      <div class="chart-wrap" id="chartWrap">
+        <div class="empty-note" id="chartEmpty" style="display:none;"></div>
+        <svg class="chart-svg" id="chartSvg" viewBox="0 0 800 220" preserveAspectRatio="none" style="display:none;"></svg>
+        <div class="chart-tooltip" id="chartTooltip"></div>
+      </div>
+      <div class="chart-legend" id="chartLegend" style="display:none;">
+        <span><i class="sw-bar"></i>Seconds since previous block</span>
+        <span><i class="sw-ref"></i>30s target</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <div class="section-head">
+      <p class="eyebrow"><span class="dot"></span>Recent blocks</p>
+      <h2>The last blocks this node has accepted.</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="blocks-table" id="blocksTable">
+        <thead>
+          <tr>
+            <th class="mono">Height</th>
+            <th>Age</th>
+            <th class="mono">Hash</th>
+            <th class="mono">Miner</th>
+            <th class="mono">Txs</th>
+            <th class="mono">Difficulty</th>
+          </tr>
+        </thead>
+        <tbody id="blocksTbody">
+          <tr><td colspan="6" class="empty-note">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note-callout" id="sparseNote" style="display:none;"><strong>Chain is short right now.</strong> This testnet's difficulty is calibrated for GPU-scale mining (~13M H/s) — with no miner currently pointed at the public node, new blocks are rare. Run <code>ondris-miner</code> or <code>ondris-miner-gpu</code> against <code>51.89.226.44:8080</code> to help fill this in.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container footer-top">
+    <div class="footer-brand">
+      <a href="index.html" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+      <p>A GPU-mineable, ASIC-resistant proof-of-work chain built around memory bandwidth instead of raw compute. Unaudited testnet software — not investment advice.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Project</h4>
+      <ul>
+        <li><a href="https://github.com/ondris-project/ondris" target="_blank" rel="noopener">Source code</a></li>
+        <li><a href="https://github.com/ondris-project/ondris/blob/master/docs/ALGORITHM.md" target="_blank" rel="noopener">Algorithm spec</a></li>
+        <li><a href="https://github.com/ondris-project/ondris/blob/master/docs/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a></li>
+        <li><a href="https://github.com/ondris-project/ondris/blob/master/docs/WHITEPAPER.md" target="_blank" rel="noopener">Whitepaper</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Network</h4>
+      <ul>
+        <li><a href="index.html">← Back to home</a></li>
+        <li class="mono-line">Seed 51.89.226.44:30303</li>
+        <li class="mono-line">RPC 51.89.226.44:8080</li>
+        <li class="mono-line">Mainnet target 2026-07-25</li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <span>© 2026 Ondris contributors · MIT licensed</span>
+    <span>Experimental, unaudited software provided as-is. Mine and transact at your own risk.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  var stored = localStorage.getItem('ondris-theme');
+  if (stored) root.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function(){
+    var current = root.getAttribute('data-theme') ||
+      (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    localStorage.setItem('ondris-theme', next);
+  });
+})();
+
+(function(){
+  var RPC_BASE = 'http://51.89.226.44:8080';
+  var TARGET_BLOCK_TIME = 30; // seconds; matches config/testnet-genesis.json, not exposed via RPC today
+  var MAX_BLOCKS = 20;
+
+  var elLastUpdated = document.getElementById('lastUpdated');
+  var elLiveDot = document.getElementById('liveDot');
+  var elHeight = document.getElementById('kpiHeight');
+  var elDiff = document.getElementById('kpiDiff');
+  var elPeers = document.getElementById('kpiPeers');
+  var elHashrate = document.getElementById('kpiHashrate');
+  var elHashrateSub = document.getElementById('kpiHashrateSub');
+  var elTip = document.getElementById('kpiTip');
+  var elChartWrap = document.getElementById('chartWrap');
+  var elChartEmpty = document.getElementById('chartEmpty');
+  var elChartSvg = document.getElementById('chartSvg');
+  var elChartLegend = document.getElementById('chartLegend');
+  var elTooltip = document.getElementById('chartTooltip');
+  var elTbody = document.getElementById('blocksTbody');
+  var elSparseNote = document.getElementById('sparseNote');
+
+  function fmtInt(n){ return Number(n).toLocaleString('en-US'); }
+  function shortHash(h){ return h ? (h.slice(0, 10) + '…' + h.slice(-6)) : '—'; }
+  function shortAddr(a){ return a && a.length > 16 ? (a.slice(0, 10) + '…' + a.slice(-4)) : (a || '—'); }
+
+  function fmtAge(sec){
+    if (sec < 60) return Math.max(0, Math.round(sec)) + 's ago';
+    if (sec < 3600) return Math.round(sec / 60) + 'm ago';
+    if (sec < 86400) return Math.round(sec / 3600) + 'h ago';
+    return Math.round(sec / 86400) + 'd ago';
+  }
+
+  function fmtHashrate(hps){
+    if (hps >= 1e12) return (hps / 1e12).toFixed(2) + ' TH/s';
+    if (hps >= 1e9) return (hps / 1e9).toFixed(2) + ' GH/s';
+    if (hps >= 1e6) return (hps / 1e6).toFixed(2) + ' MH/s';
+    if (hps >= 1e3) return (hps / 1e3).toFixed(2) + ' KH/s';
+    return Math.round(hps) + ' H/s';
+  }
+
+  function fetchJson(path){
+    return fetch(RPC_BASE + path, { mode: 'cors' }).then(function(r){
+      if (!r.ok) throw new Error('bad response for ' + path);
+      return r.json();
+    });
+  }
+
+  function renderChart(blocks){
+    // blocks: newest-first array of {height, timestamp}. Need consecutive
+    // pairs (both present) to compute an interval — a gap in the fetched
+    // range (shouldn't happen since we fetch a contiguous span, but never
+    // assume) just means one fewer bar rather than a wrong one.
+    var intervals = [];
+    for (var i = 0; i < blocks.length - 1; i++){
+      var newer = blocks[i], older = blocks[i + 1];
+      if (newer.height === older.height + 1){
+        intervals.push({ height: newer.height, seconds: newer.timestamp - older.timestamp });
+      }
+    }
+    intervals.reverse(); // oldest-first for left-to-right reading
+
+    if (intervals.length < 3){
+      elChartEmpty.style.display = '';
+      elChartSvg.style.display = 'none';
+      elChartLegend.style.display = 'none';
+      elChartEmpty.innerHTML = '<strong>Not enough blocks yet to chart block times.</strong> This testnet\'s difficulty targets GPU-scale mining, so blocks are infrequent without an active miner. Once a few more land, this fills in automatically — no placeholder data shown in the meantime.';
+      return;
+    }
+
+    elChartEmpty.style.display = 'none';
+    elChartSvg.style.display = '';
+    elChartLegend.style.display = '';
+
+    var W = 800, H = 220, padL = 34, padR = 8, padT = 14, padB = 28;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var maxVal = Math.max(TARGET_BLOCK_TIME * 1.4, Math.max.apply(null, intervals.map(function(d){ return d.seconds; })) * 1.15);
+    var n = intervals.length;
+    var slot = plotW / n;
+    var barW = Math.max(3, Math.min(28, slot * 0.6));
+
+    function y(v){ return padT + plotH - (v / maxVal) * plotH; }
+
+    var svg = '';
+    // gridline + axis labels (0 and target)
+    svg += '<line class="chart-ref-line" x1="' + padL + '" y1="' + y(0) + '" x2="' + (W - padR) + '" y2="' + y(0) + '" style="stroke-dasharray:none; stroke:var(--wire);"/>';
+    svg += '<text class="chart-axis-label" x="4" y="' + (y(0) + 4) + '">0s</text>';
+    svg += '<line class="chart-ref-line" x1="' + padL + '" y1="' + y(TARGET_BLOCK_TIME) + '" x2="' + (W - padR) + '" y2="' + y(TARGET_BLOCK_TIME) + '"/>';
+    svg += '<text class="chart-ref-label" x="4" y="' + (y(TARGET_BLOCK_TIME) - 4) + '">30s target</text>';
+
+    intervals.forEach(function(d, i){
+      var cx = padL + slot * i + slot / 2;
+      var barH = Math.max(2, (d.seconds / maxVal) * plotH);
+      var bx = cx - barW / 2;
+      var by = padT + plotH - barH;
+      svg += '<rect class="chart-bar" data-height="' + d.height + '" data-seconds="' + d.seconds.toFixed(1) +
+             '" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + barH.toFixed(1) +
+             '" rx="2"><title>Block ' + d.height + ': ' + d.seconds.toFixed(1) + 's</title></rect>';
+      if (n <= 20 && (i % Math.ceil(n / 10) === 0 || i === n - 1)){
+        svg += '<text class="chart-axis-label" x="' + cx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">#' + d.height + '</text>';
+      }
+    });
+
+    elChartSvg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    elChartSvg.innerHTML = svg;
+
+    var bars = elChartSvg.querySelectorAll('.chart-bar');
+    bars.forEach(function(bar){
+      bar.addEventListener('mousemove', function(e){
+        var rect = elChartWrap.getBoundingClientRect();
+        elTooltip.textContent = 'Block ' + bar.getAttribute('data-height') + ' — ' + bar.getAttribute('data-seconds') + 's';
+        elTooltip.style.left = (e.clientX - rect.left) + 'px';
+        elTooltip.style.top = (e.clientY - rect.top) + 'px';
+        elTooltip.classList.add('is-visible');
+      });
+      bar.addEventListener('mouseleave', function(){
+        elTooltip.classList.remove('is-visible');
+      });
+    });
+
+    return intervals;
+  }
+
+  function renderTable(blocks, chainHeight, nowSec){
+    if (!blocks.length){
+      elTbody.innerHTML = '<tr><td colspan="6" class="empty-note">No blocks found.</td></tr>';
+      return;
+    }
+    var rows = blocks.map(function(b){
+      var age = fmtAge(Math.max(0, nowSec - b.timestamp));
+      var isGenesis = b.height === 0;
+      return '<tr>' +
+        '<td class="mono num">' + b.height + (isGenesis ? '<span class="genesis-tag">genesis</span>' : '') + '</td>' +
+        '<td>' + age + '</td>' +
+        '<td class="mono" title="' + b.hash + '">' + shortHash(b.hash) + '</td>' +
+        '<td class="mono" title="' + b.miner + '">' + shortAddr(b.miner) + '</td>' +
+        '<td class="mono num">' + b.txCount + '</td>' +
+        '<td class="mono num">' + fmtInt(b.difficulty) + '</td>' +
+        '</tr>';
+    }).join('');
+    elTbody.innerHTML = rows;
+    elSparseNote.style.display = chainHeight < 10 ? '' : 'none';
+  }
+
+  function load(){
+    fetchJson('/chain/info').then(function(info){
+      elHeight.textContent = fmtInt(info.height);
+      elDiff.textContent = fmtInt(info.next_difficulty);
+      elPeers.innerHTML = info.peer_count > 0
+        ? '<span class="pill good">' + info.peer_count + ' connected</span>'
+        : '<span class="pill off">0 connected</span>';
+      elTip.textContent = shortHash(info.tip_hash);
+      elTip.setAttribute('title', info.tip_hash);
+      [elHeight, elDiff, elPeers, elTip].forEach(function(el){ el.classList.remove('is-loading'); });
+      elLiveDot.classList.add('is-live');
+      elLiveDot.classList.remove('is-down');
+      elLastUpdated.textContent = 'updated ' + new Date().toLocaleTimeString();
+
+      var topHeight = info.height;
+      var count = Math.min(MAX_BLOCKS, topHeight + 1);
+      var heights = [];
+      for (var h = topHeight; h > topHeight - count; h--) heights.push(h);
+
+      return Promise.all(heights.map(function(h){
+        return fetchJson('/block/height/' + h).then(function(b){
+          return {
+            height: b.header.height,
+            timestamp: b.header.timestamp,
+            prevHash: b.header.prev_hash,
+            miner: b.header.miner,
+            difficulty: b.header.difficulty,
+            txCount: b.transactions.length,
+          };
+        });
+      })).then(function(blocks){
+        var nowSec = Math.floor(Date.now() / 1000);
+        // /block/height/:h returns a block's PARENT hash (prev_hash), not
+        // its own — there's no dedicated "block hash" field. But each
+        // block's own hash is exactly the prev_hash the next-newer block
+        // already carries, and /chain/info gave us the tip's real hash
+        // directly — so every row in this contiguous, newest-first range
+        // can get its real hash from its neighbor, with nothing fabricated.
+        blocks.forEach(function(b, i){
+          b.hash = i === 0 ? info.tip_hash : blocks[i - 1].prevHash;
+        });
+
+        var validIntervals = [];
+        for (var j = 0; j < blocks.length - 1; j++){
+          if (blocks[j].height === blocks[j + 1].height + 1){
+            validIntervals.push(blocks[j].timestamp - blocks[j + 1].timestamp);
+          }
+        }
+        var avgInterval = validIntervals.length >= 3
+          ? validIntervals.reduce(function(a, b){ return a + b; }, 0) / validIntervals.length
+          : null;
+
+        var hashrate = info.next_difficulty / (avgInterval || TARGET_BLOCK_TIME);
+        elHashrate.textContent = fmtHashrate(hashrate);
+        elHashrate.classList.remove('is-loading');
+        elHashrateSub.textContent = avgInterval
+          ? ('from observed avg block time (' + avgInterval.toFixed(1) + 's over ' + validIntervals.length + ' blocks)')
+          : 'assuming the 30s target — not enough blocks yet for an observed rate';
+
+        renderChart(blocks);
+        renderTable(blocks, topHeight, nowSec);
+      });
+    }).catch(function(err){
+      elLastUpdated.textContent = 'could not reach the node (' + err.message + ')';
+      elLiveDot.classList.remove('is-live');
+      elLiveDot.classList.add('is-down');
+    });
+  }
+
+  load();
+  setInterval(load, 15000);
+})();
+</script>
+</body>
+</html>

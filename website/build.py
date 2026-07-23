@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Bakes template.html into index.html by inlining the IBM Plex font
-files (fonts/*.b64) as base64 data URIs. Re-run this after editing
-template.html. The font files themselves were fetched once from Google
-Fonts and base64-encoded; see README.md in this folder for how to
-regenerate them if a weight/style needs to change.
+"""Bakes each *-template.html (plus the root template.html) into its
+final page by inlining the IBM Plex font files (fonts/*.b64) as base64
+data URIs. Re-run this after editing any template. The font files
+themselves were fetched once from Google Fonts and base64-encoded; see
+README.md in this folder for how to regenerate them if a weight/style
+needs to change.
 """
 import pathlib
 
@@ -18,17 +19,28 @@ MAPPING = {
     "__SERIF600__": "serif-600.b64",
 }
 
+# (template file, output file)
+PAGES = [
+    ("template.html", "index.html"),
+    ("stats-template.html", "stats.html"),
+]
 
-def main():
-    tpl = (HERE / "template.html").read_text(encoding="utf-8")
+
+def bake(template_name, output_name):
+    tpl = (HERE / template_name).read_text(encoding="utf-8")
     for placeholder, fname in MAPPING.items():
         b64 = (HERE / "fonts" / fname).read_text(encoding="utf-8").strip()
         if placeholder not in tpl:
-            raise SystemExit(f"missing placeholder {placeholder} in template.html")
+            raise SystemExit(f"missing placeholder {placeholder} in {template_name}")
         tpl = tpl.replace(placeholder, b64)
-    out = HERE / "index.html"
+    out = HERE / output_name
     out.write_text(tpl, encoding="utf-8")
     print(f"wrote {out} ({len(tpl):,} bytes)")
+
+
+def main():
+    for template_name, output_name in PAGES:
+        bake(template_name, output_name)
 
 
 if __name__ == "__main__":

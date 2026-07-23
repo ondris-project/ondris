@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Ondris — a proof-of-work chain built around memory, not silicon</title>
-<meta name="description" content="Ondris is a GPU-mineable, ASIC-resistant proof-of-work chain. OndrisHash forces every hash to touch a wide, shifting block of memory — unaudited testnet, mainnet targeted for July 25, 2026." />
+<title>Ondris — live network stats</title>
+<meta name="description" content="Live Ondris testnet statistics pulled directly from the public node's RPC: chain height, difficulty, peers, block times, and recent blocks." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' fill='%2312151a'/%3E%3Crect x='3' y='3' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='15' y='9' width='6' height='6' fill='%23e08a4b'/%3E%3Crect x='9' y='15' width='6' height='6' fill='%23e08a4b'/%3E%3C/svg%3E" />
 <style>
 @font-face{font-family:'Plex Mono';font-style:normal;font-weight:400;font-display:swap;src:url(data:font/woff2;base64,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) format('woff2');}
@@ -20,7 +20,6 @@
   --accent:#C1602A; --accent-ink:#FBF3EC;
   --wire:#C7CDC9; --wire-strong:#AEB6B1;
   --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
-  --grid-dim: 199,205,201; --grid-hot: 193,96,42;
   --shadow: 0 1px 0 rgba(0,0,0,.04);
   color-scheme: light;
 }
@@ -31,7 +30,6 @@
     --accent:#E08A4B; --accent-ink:#1A1006;
     --wire:#2C3540; --wire-strong:#404C58;
     --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
-    --grid-dim: 44,53,64; --grid-hot: 224,138,75;
     color-scheme: dark;
   }
 }
@@ -41,7 +39,6 @@
   --accent:#E08A4B; --accent-ink:#1A1006;
   --wire:#2C3540; --wire-strong:#404C58;
   --status-good:#7CC28C; --status-warn:#D9B84A; --status-off:#8E97A3;
-  --grid-dim: 44,53,64; --grid-hot: 224,138,75;
   color-scheme: dark;
 }
 :root[data-theme="light"]{
@@ -50,7 +47,6 @@
   --accent:#C1602A; --accent-ink:#FBF3EC;
   --wire:#C7CDC9; --wire-strong:#AEB6B1;
   --status-good:#3F7A4C; --status-warn:#8C6A12; --status-off:#5B646C;
-  --grid-dim: 199,205,201; --grid-hot: 193,96,42;
   color-scheme: light;
 }
 
@@ -100,7 +96,7 @@ p{ margin:0; }
 .prose.mute{ color:var(--text-mute); }
 .num{ font-family:'Plex Mono', monospace; font-variant-numeric:tabular-nums; }
 
-/* ---------- nav ---------- */
+/* ---------- nav (identical to the main site) ---------- */
 .nav{
   position:sticky; top:0; z-index:40;
   background:color-mix(in srgb, var(--bg) 82%, transparent);
@@ -127,6 +123,7 @@ p{ margin:0; }
   text-decoration:none; color:var(--text-mute); white-space:nowrap;
 }
 .nav-links a:hover{ color:var(--text); }
+.nav-links a.current{ color:var(--accent); }
 .nav-links a.primary{ color:var(--text); border:1px solid var(--wire-strong); padding:.4em .85em; }
 .nav-links a.primary:hover{ border-color:var(--accent); color:var(--accent); }
 .theme-btn{
@@ -135,151 +132,115 @@ p{ margin:0; }
 }
 .theme-btn:hover{ border-color:var(--accent); }
 .theme-btn svg{ width:14px; height:14px; stroke:var(--text); fill:none; stroke-width:1.6; }
-.skip-hidden{ display:none; }
 @media (max-width: 46rem){
   .nav-links a:not(.primary):not(.theme-btn-wrap){ display:none; }
 }
 
-/* ---------- hero ---------- */
-.hero{ position:relative; overflow:hidden; border-bottom:1px solid var(--wire); }
-.hero-canvas-wrap{
-  position:absolute; inset:0; z-index:0;
-  -webkit-mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
-  mask-image:linear-gradient(to bottom, black 0%, black 55%, transparent 96%);
+/* ---------- dashboard header ---------- */
+.dash-header{ border-bottom:1px solid var(--wire); padding-block:clamp(2.5rem,6vw,3.75rem) clamp(2rem,4vw,2.5rem); }
+.dash-header h1{ font-size:clamp(2rem,5vw,3rem); line-height:1.05; margin-block:1rem .75rem; }
+.dash-header .prose{ max-width:44em; }
+.dash-meta{
+  display:flex; align-items:center; gap:.6em; margin-top:1.25rem;
+  font-family:'Plex Mono',monospace; font-size:.8125rem; color:var(--text-mute);
 }
-#grid{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-.hero-inner{
-  position:relative; z-index:1;
-  padding-block:clamp(4rem, 12vw, 7.5rem) clamp(3rem,8vw,5rem);
-}
-.hero-inner .eyebrow{ margin-bottom:1.4rem; }
-.hero h1{
-  font-size:clamp(3.2rem, 10vw, 7.75rem);
-  line-height:.92;
-  margin-bottom:1.5rem;
-}
-.hero-sub{
-  font-family:'Plex Serif', serif; font-size:clamp(1.05rem,1.6vw,1.25rem);
-  line-height:1.65; max-width:40em; color:var(--text);
-  margin-bottom:2.25rem;
-}
-.hero-sub em{ font-style:italic; color:var(--accent); }
-.cta-row{ display:flex; flex-wrap:wrap; align-items:center; gap:1rem; margin-bottom:1.6rem; }
-.btn{
-  font-family:'Plex Mono', monospace; font-weight:600; font-size:.85rem;
-  letter-spacing:.02em; text-decoration:none; display:inline-flex; align-items:center; gap:.5em;
-  padding:.85em 1.3em; border:1px solid var(--text);
-}
-.btn.solid{ background:var(--text); color:var(--bg); }
-.btn.solid:hover{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
-.btn.ghost{ border-color:var(--wire-strong); color:var(--text); }
-.btn.ghost:hover{ border-color:var(--accent); color:var(--accent); }
-.hero-meta{ font-size:.875rem; color:var(--text-mute); max-width:38em; }
-.hero-meta strong{ color:var(--text); font-weight:600; }
-
-/* live stat strip */
-.stat-strip{
-  position:relative; z-index:1;
-  display:grid; grid-template-columns:repeat(4,1fr);
-  border-top:1px solid var(--wire);
-}
-.stat{
-  padding:1.25rem clamp(1.25rem,3vw,1.75rem);
-  border-right:1px solid var(--wire);
-}
-.stat:last-child{ border-right:none; }
-.stat-label{ font-size:.6875rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-mute); font-family:'Plex Mono',monospace; margin-bottom:.4rem; display:block; }
-.stat-value{ font-family:'Plex Mono',monospace; font-weight:700; font-size:clamp(1.1rem,2.4vw,1.6rem); font-variant-numeric:tabular-nums; }
-.stat-value.is-loading{ color:var(--text-mute); }
-.live-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-mute); display:inline-block; margin-right:.5em; }
+.live-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-mute); display:inline-block; flex:none; }
 .live-dot.is-live{ background:var(--status-good); box-shadow:0 0 0 3px color-mix(in srgb, var(--status-good) 25%, transparent); }
-@media (max-width: 46rem){
-  .stat-strip{ grid-template-columns:repeat(2,1fr); }
-  .stat:nth-child(2){ border-right:none; }
-}
-.stat-strip-link{ position:relative; z-index:1; padding-block:.9rem; border-top:1px solid var(--wire); }
-.stat-strip-link a{
-  font-family:'Plex Mono',monospace; font-size:.8125rem; text-decoration:none;
-  color:var(--text-mute);
-}
-.stat-strip-link a:hover{ color:var(--accent); }
+.live-dot.is-down{ background:var(--status-warn); }
 
-/* ---------- sections ---------- */
-section{ padding-block:clamp(3.5rem,9vw,6.5rem); }
+/* ---------- KPI tiles ---------- */
+.kpi-section{ padding-block:clamp(2rem,4vw,2.75rem); }
+.kpi-grid{
+  display:grid; grid-template-columns:repeat(4,1fr); gap:1px;
+  background:var(--wire); border:1px solid var(--wire);
+}
+.kpi{ background:var(--bg); padding:1.25rem 1.4rem; min-width:0; }
+.kpi-label{
+  font-size:.6875rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-mute);
+  font-family:'Plex Mono',monospace; margin-bottom:.5rem; display:block;
+}
+.kpi-value{
+  font-family:'Plex Mono',monospace; font-weight:700; font-size:clamp(1.1rem,2.2vw,1.5rem);
+  font-variant-numeric:tabular-nums; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.kpi-value.is-loading{ color:var(--text-mute); font-weight:400; }
+.kpi-sub{ font-size:.75rem; color:var(--text-mute); margin-top:.35rem; }
+.kpi .pill{ font-size:.95rem; }
+@media (max-width: 58rem){ .kpi-grid{ grid-template-columns:repeat(2,1fr); } }
+
+/* ---------- chart ---------- */
+section{ padding-block:clamp(2.5rem,5vw,3.5rem); }
 .section-raised{ background:var(--bg-raised); border-block:1px solid var(--wire); }
-.section-head{ display:flex; flex-direction:column; gap:1rem; margin-bottom:clamp(2.25rem,5vw,3.25rem); max-width:46em; }
-.section-head h2{ font-size:clamp(1.75rem,3.6vw,2.6rem); line-height:1.08; }
+.section-head{ display:flex; flex-direction:column; gap:.6rem; margin-bottom:1.75rem; max-width:46em; }
+.section-head h2{ font-size:clamp(1.4rem,2.6vw,1.85rem); line-height:1.15; }
 
-/* how it works */
-.steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(1.5rem,3vw,2.25rem); }
-.step{ border-top:2px solid var(--wire-strong); padding-top:1.25rem; }
-.step-num{ font-family:'Plex Mono',monospace; font-weight:700; color:var(--accent); font-size:.9rem; display:block; margin-bottom:.75rem; }
-.step h3{ font-size:1.15rem; margin-bottom:.65rem; }
-.step p{ color:var(--text-mute); font-size:.95rem; line-height:1.65; }
-.spec-link{ margin-top:2.5rem; }
-.spec-link a{ font-family:'Plex Mono',monospace; font-size:.85rem; text-decoration:none; color:var(--text); border-bottom:1px solid var(--wire-strong); padding-bottom:.15em; }
-.spec-link a:hover{ color:var(--accent); border-color:var(--accent); }
-@media (max-width: 50rem){ .steps{ grid-template-columns:1fr; } }
+.chart-card{ background:var(--bg); border:1px solid var(--wire); padding:1.5rem clamp(1.25rem,3vw,2rem) 1.25rem; }
+.chart-empty{
+  display:flex; flex-direction:column; align-items:flex-start; gap:.5rem;
+  padding-block:2rem; color:var(--text-mute); font-size:.9rem; max-width:36em;
+}
+.chart-empty strong{ color:var(--text); }
+.chart-wrap{ position:relative; }
+.chart-svg{ width:100%; height:220px; display:block; overflow:visible; }
+.chart-bar{ fill:var(--accent); }
+.chart-bar:hover, .chart-bar.is-hot{ fill:var(--text); }
+.chart-ref-line{ stroke:var(--text-mute); stroke-width:1; stroke-dasharray:3,3; }
+.chart-ref-label{ font-family:'Plex Mono',monospace; font-size:.6875rem; fill:var(--text-mute); }
+.chart-axis-label{ font-family:'Plex Mono',monospace; font-size:.6875rem; fill:var(--text-mute); }
+.chart-legend{
+  display:flex; flex-wrap:wrap; gap:1.25rem; margin-top:.9rem; padding-top:.9rem;
+  border-top:1px solid var(--wire); font-size:.8rem; color:var(--text-mute);
+}
+.chart-legend span{ display:inline-flex; align-items:center; gap:.5em; }
+.chart-legend i{ width:10px; height:10px; flex:none; }
+.chart-legend .sw-bar{ background:var(--accent); }
+.chart-legend .sw-ref{ border-top:1px dashed var(--text-mute); width:12px; height:0; }
+.chart-tooltip{
+  position:absolute; pointer-events:none; opacity:0; transition:opacity .1s ease;
+  background:var(--text); color:var(--bg); font-family:'Plex Mono',monospace; font-size:.75rem;
+  padding:.4em .65em; white-space:nowrap; transform:translate(-50%,-115%); z-index:5;
+}
+.chart-tooltip.is-visible{ opacity:1; }
 
-/* why gpu two-column */
-.split{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(2rem,4vw,3.5rem); align-items:start; }
-.split-col{ padding:1.75rem; background:var(--bg); border:1px solid var(--wire); }
-.split-col h3{ font-size:1.05rem; margin-bottom:1rem; }
-.split-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:.9rem; }
-.split-col li{ font-size:.95rem; color:var(--text-mute); padding-left:1.1em; position:relative; }
-.split-col li::before{ content:""; position:absolute; left:0; top:.55em; width:5px; height:5px; background:var(--wire-strong); }
-.split-col.resist li::before{ background:var(--accent); }
-@media (max-width: 50rem){ .split{ grid-template-columns:1fr; } }
-
-/* status table */
-.status-table{ width:100%; border-collapse:collapse; font-size:.9375rem; }
-.status-table th{
+/* ---------- blocks table ---------- */
+.table-wrap{ overflow-x:auto; }
+.blocks-table{ width:100%; border-collapse:collapse; font-size:.875rem; }
+.blocks-table th{
   text-align:left; font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.1em;
   text-transform:uppercase; color:var(--text-mute); font-weight:600;
-  padding-block:.75rem; border-bottom:1px solid var(--wire-strong);
+  padding-block:.75rem; border-bottom:1px solid var(--wire-strong); white-space:nowrap;
 }
-.status-table td{ padding-block:.9rem; border-bottom:1px solid var(--wire); vertical-align:top; }
-.status-table tr:last-child td{ border-bottom:none; }
-.status-table td:first-child{ font-family:'Plex Mono',monospace; font-size:.875rem; padding-right:1.5rem; }
+.blocks-table td{
+  padding-block:.85rem; padding-right:1.25rem; border-bottom:1px solid var(--wire);
+  vertical-align:middle; white-space:nowrap;
+}
+.blocks-table tr:last-child td{ border-bottom:none; }
+.blocks-table td.mono, .blocks-table th.mono{ font-family:'Plex Mono',monospace; }
+.blocks-table .genesis-tag{
+  font-family:'Plex Mono',monospace; font-size:.6875rem; letter-spacing:.06em;
+  color:var(--text-mute); text-transform:uppercase; margin-left:.6em;
+}
+.empty-note{ color:var(--text-mute); font-size:.9rem; padding-block:1.5rem; }
+
 .pill{
   display:inline-flex; align-items:center; gap:.5em; font-family:'Plex Mono',monospace;
   font-size:.8125rem; white-space:nowrap;
 }
-.pill::before{ content:""; width:6px; height:6px; flex:none; }
+.pill::before{ content:""; width:6px; height:6px; flex:none; border-radius:50%; }
 .pill.good::before{ background:var(--status-good); }
 .pill.good{ color:var(--status-good); }
 .pill.warn::before{ background:var(--status-warn); }
 .pill.warn{ color:var(--status-warn); }
 .pill.off::before{ background:var(--status-off); }
 .pill.off{ color:var(--status-off); }
-.table-wrap{ overflow-x:auto; }
-.status-callout{
-  margin-top:2rem; padding:1.25rem 1.5rem; border-left:2px solid var(--accent);
-  background:var(--bg); font-size:.9rem; color:var(--text-mute); max-width:52em;
-}
-.status-callout strong{ color:var(--text); }
 
-/* get started */
-.getstarted-grid{ display:grid; grid-template-columns:1.05fr 1fr; gap:clamp(2rem,4vw,3rem); align-items:start; }
-.terminal{ background:var(--bg-sunken); border:1px solid var(--wire); }
-.terminal-bar{
-  display:flex; align-items:center; gap:.4rem; padding:.6rem .9rem; border-bottom:1px solid var(--wire);
+.note-callout{
+  margin-top:1.75rem; padding:1.1rem 1.4rem; border-left:2px solid var(--wire-strong);
+  background:var(--bg); font-size:.85rem; color:var(--text-mute); max-width:52em;
 }
-.terminal-bar i{ width:8px; height:8px; background:var(--wire-strong); }
-.terminal-bar span{ font-family:'Plex Mono',monospace; font-size:.7rem; color:var(--text-mute); margin-left:.5rem; letter-spacing:.05em; }
-.terminal pre{
-  margin:0; padding:1.25rem 1.4rem; overflow-x:auto;
-  font-family:'Plex Mono',monospace; font-size:.83rem; line-height:2;
-}
-.terminal .c-prompt{ color:var(--text-mute); }
-.terminal .c-cmd{ color:var(--text); }
-.terminal .c-flag{ color:var(--accent); }
-.getstarted-note{ font-size:.95rem; color:var(--text-mute); }
-.getstarted-note a{ color:var(--text); border-bottom:1px solid var(--wire-strong); text-decoration:none; }
-.getstarted-note a:hover{ color:var(--accent); border-color:var(--accent); }
-@media (max-width: 55rem){ .getstarted-grid{ grid-template-columns:1fr; } }
+.note-callout strong{ color:var(--text); }
 
-/* footer */
+/* ---------- footer (identical to the main site) ---------- */
 footer{ border-top:1px solid var(--wire); }
 .footer-top{
   display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:2.5rem;
@@ -308,12 +269,12 @@ footer{ border-top:1px solid var(--wire); }
 
 <nav class="nav">
   <div class="container nav-row">
-    <a href="#top" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+    <a href="index.html" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
     <div class="nav-links">
-      <a href="#how">Algorithm</a>
-      <a href="#status">Status</a>
-      <a href="#get-started">Get started</a>
-      <a href="stats.html">Network ↗</a>
+      <a href="index.html#how">Algorithm</a>
+      <a href="index.html#status">Status</a>
+      <a href="index.html#get-started">Get started</a>
+      <a class="current" href="stats.html">Network</a>
       <a class="primary" href="https://github.com/ondris-project/ondris" target="_blank" rel="noopener">Source ↗</a>
       <button class="theme-btn" id="themeBtn" aria-label="Toggle color theme" title="Toggle color theme">
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
@@ -322,137 +283,107 @@ footer{ border-top:1px solid var(--wire); }
   </div>
 </nav>
 
-<header class="hero" id="top">
-  <div class="hero-canvas-wrap"><canvas id="grid"></canvas></div>
-  <div class="container hero-inner">
-    <p class="eyebrow"><span class="dot"></span>Proof-of-work · unaudited testnet</p>
-    <h1>ONDRIS</h1>
-    <p class="hero-sub">A proof-of-work chain where every hash has to touch a wide, shifting block of memory. That's the entire design: memory is the one resource a graphics card already has <em>in abundance</em> — and the one an ASIC would have to buy from scratch, at a cost its speed can't make back.</p>
-    <div class="cta-row">
-      <a class="btn solid" href="https://github.com/ondris-project/ondris" target="_blank" rel="noopener">Read the source →</a>
-      <a class="btn ghost" href="#get-started">Run a node</a>
-    </div>
-    <p class="hero-meta">Mainnet target — <strong>25 July 2026</strong>. The algorithm, node, wallet, fork handling and both miners (CPU and GPU) work today; the GPU miner measures ~13M H/s on an RTX 4070 Super, and the independent audit doesn't exist. See exactly what's done in <a href="#status" style="color:var(--text);border-bottom:1px solid var(--wire-strong);text-decoration:none;">Status</a> before you point real hardware at it.</p>
+<header class="dash-header">
+  <div class="container">
+    <p class="eyebrow"><span class="dot"></span>Testnet · live RPC</p>
+    <h1>Network</h1>
+    <p class="prose mute">Pulled directly from the public node's RPC (<code>51.89.226.44:8080</code>) — no aggregation, no caching, no separate indexer. What's below is what that one node currently believes about the chain, refreshed automatically every 15 seconds.</p>
+    <div class="dash-meta"><span class="live-dot" id="liveDot"></span><span id="lastUpdated">connecting…</span></div>
   </div>
-  <div class="stat-strip">
-    <div class="stat"><span class="stat-label"><span class="live-dot" id="liveDot"></span>Chain height</span><span class="stat-value is-loading" id="statHeight">—</span></div>
-    <div class="stat"><span class="stat-label">Difficulty</span><span class="stat-value is-loading" id="statDiff">—</span></div>
-    <div class="stat"><span class="stat-label">Peers</span><span class="stat-value is-loading" id="statPeers">—</span></div>
-    <div class="stat"><span class="stat-label">Block reward</span><span class="stat-value num">50 ONDR</span></div>
-  </div>
-  <div class="container stat-strip-link"><a href="stats.html">Full network stats, block-by-block →</a></div>
 </header>
 
-<section id="how">
+<section class="kpi-section">
   <div class="container">
-    <div class="section-head">
-      <p class="eyebrow"><span class="dot"></span>How it works</p>
-      <h2>Three steps, and none of them are a shortcut.</h2>
-      <p class="prose mute">OndrisHash doesn't invent a new cryptographic primitive — it combines BLAKE3, already audited and standardized, into an original arrangement of memory that's expensive to fake.</p>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <span class="kpi-label">Chain height</span>
+        <span class="kpi-value is-loading num" id="kpiHeight">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Current difficulty</span>
+        <span class="kpi-value is-loading num" id="kpiDiff">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Peers (this node)</span>
+        <span class="kpi-value is-loading" id="kpiPeers">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Est. network hashrate</span>
+        <span class="kpi-value is-loading" id="kpiHashrate">—</span>
+        <div class="kpi-sub" id="kpiHashrateSub">&nbsp;</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Tip block hash</span>
+        <span class="kpi-value is-loading num" id="kpiTip" title="">—</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Target block time</span>
+        <span class="kpi-value num">30s</span>
+        <div class="kpi-sub">configured, not live-measured</div>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Block reward</span>
+        <span class="kpi-value num">50 ONDR</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Retarget window</span>
+        <span class="kpi-value num">60 blocks</span>
+      </div>
     </div>
-    <div class="steps">
-      <div class="step">
-        <span class="step-num">01</span>
-        <h3>Epoch dataset</h3>
-        <p>Every 2,048 blocks the network derives a new dataset — tens of megabytes generated from the hash of a block that's already been mined. Nobody can precompute it ahead of time, because it doesn't exist until the chain writes it.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">02</span>
-        <h3>Dataset mixing</h3>
-        <p>Mining reads 64 pseudo-random slices out of that dataset per attempt and folds each one in with a cheap mix step. Every attempt is dominated by real, scattered memory reads across tens of megabytes — not by raw arithmetic a single fast core could win at alone.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">03</span>
-        <h3>Validation</h3>
-        <p>The result only counts if it comes out below the network's current target — a plain 256-bit comparison any node can check in microseconds, whether or not it owns a GPU.</p>
-      </div>
-    </div>
-    <p class="spec-link"><a href="https://github.com/ondris-project/ondris/blob/master/docs/ALGORITHM.md" target="_blank" rel="noopener">Read the full algorithm spec →</a></p>
   </div>
 </section>
 
 <section class="section-raised">
   <div class="container">
     <div class="section-head">
-      <p class="eyebrow"><span class="dot"></span>Why this favors a GPU</p>
-      <h2>The bottleneck is bandwidth, not brains.</h2>
+      <p class="eyebrow"><span class="dot"></span>Block times</p>
+      <h2>Seconds between the last blocks, against the 30s target.</h2>
     </div>
-    <div class="split">
-      <div class="split-col">
-        <h3>What the algorithm rewards</h3>
-        <ul>
-          <li>A wide memory bus moving many gigabytes per second — ordinary on a graphics card.</li>
-          <li>Thousands of threads that can each fire off their own random dataset reads in parallel.</li>
-          <li>Hardware you already own and can repurpose the moment you stop mining.</li>
-        </ul>
+    <div class="chart-card">
+      <div class="chart-wrap" id="chartWrap">
+        <div class="empty-note" id="chartEmpty" style="display:none;"></div>
+        <svg class="chart-svg" id="chartSvg" viewBox="0 0 800 220" preserveAspectRatio="none" style="display:none;"></svg>
+        <div class="chart-tooltip" id="chartTooltip"></div>
       </div>
-      <div class="split-col resist">
-        <h3>What it resists</h3>
-        <ul>
-          <li>A dedicated ASIC would need to embed the same fast VRAM a GPU already ships with.</li>
-          <li>That erases most of an ASIC's usual cost and power advantage before it even starts hashing.</li>
-          <li>A CPU can still verify a block in the time it takes to read this sentence — it just can't mine competitively.</li>
-        </ul>
+      <div class="chart-legend" id="chartLegend" style="display:none;">
+        <span><i class="sw-bar"></i>Seconds since previous block</span>
+        <span><i class="sw-ref"></i>30s target</span>
       </div>
     </div>
   </div>
 </section>
 
-<section id="status">
+<section>
   <div class="container">
     <div class="section-head">
-      <p class="eyebrow"><span class="dot"></span>Status</p>
-      <h2>What's actually built, stated plainly.</h2>
-      <p class="prose mute">No hedging: this is the same table that ships in the repo's whitepaper, kept in sync with the code, not the marketing.</p>
+      <p class="eyebrow"><span class="dot"></span>Recent blocks</p>
+      <h2>The last blocks this node has accepted.</h2>
     </div>
     <div class="table-wrap">
-      <table class="status-table">
-        <thead><tr><th>Component</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>OndrisHash algorithm — CPU reference</td><td><span class="pill good">Functional, unaudited</span></td></tr>
-          <tr><td>Node — chain + P2P + RPC</td><td><span class="pill good">Functional, testnet only</span></td></tr>
-          <tr><td>CLI wallet</td><td><span class="pill good">Functional</span></td></tr>
-          <tr><td>Reference CPU miner</td><td><span class="pill good">Functional</span></td></tr>
-          <tr><td>GPU miner — OpenCL</td><td><span class="pill good">Functional, ~12.9M H/s on an RTX 4070 Super (~17x the CPU miner on the same machine)</span></td></tr>
-          <tr><td>Fork / reorg handling</td><td><span class="pill good">Functional</span></td></tr>
-          <tr><td>Independent cryptographic audit</td><td><span class="pill warn">Not done</span></td></tr>
-          <tr><td>"Useful compute" layer</td><td><span class="pill off">Research-grade, not implemented</span></td></tr>
+      <table class="blocks-table" id="blocksTable">
+        <thead>
+          <tr>
+            <th class="mono">Height</th>
+            <th>Age</th>
+            <th class="mono">Hash</th>
+            <th class="mono">Miner</th>
+            <th class="mono">Txs</th>
+            <th class="mono">Difficulty</th>
+          </tr>
+        </thead>
+        <tbody id="blocksTbody">
+          <tr><td colspan="6" class="empty-note">Loading…</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="status-callout"><strong>Mainnet is targeted for 25 July 2026.</strong> The rows marked not implemented or not done will very likely still read that way on that date — the date is a target, not a certificate of safety. Treat Ondris as early, unaudited software before and after it.</p>
-  </div>
-</section>
-
-<section class="section-raised" id="get-started">
-  <div class="container">
-    <div class="section-head">
-      <p class="eyebrow"><span class="dot"></span>Get started</p>
-      <h2>Run the node, then point a GPU at it.</h2>
-    </div>
-    <div class="getstarted-grid">
-      <div class="terminal">
-        <div class="terminal-bar"><i></i><i></i><i></i><span>testnet</span></div>
-        <pre><code><span class="c-prompt">$ </span><span class="c-cmd">cargo build --release --workspace</span>
-
-<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-node</span> <span class="c-flag">--</span> <span class="c-flag">--peer</span> 51.89.226.44:30303
-
-<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-wallet</span> <span class="c-flag">--</span> new <span class="c-flag">--out</span> my-wallet.json
-
-<span class="c-prompt">$ </span><span class="c-cmd">cargo run --release --bin ondris-miner</span> <span class="c-flag">--</span> <span class="c-flag">--node</span> http://127.0.0.1:8080 <span class="c-flag">--address</span> &lt;your-address&gt; <span class="c-flag">--threads</span> 4</code></pre>
-      </div>
-      <div class="getstarted-note">
-        <p class="prose mute" style="margin-bottom:1.1rem;">Needs Rust (edition 2021, 1.96+). The commands above build every binary, join the public testnet seed, create a wallet with an encrypted keystore, and start mining with all available CPU threads. There's also an OpenCL GPU miner (<code>ondris-miner-gpu</code>) — run its <code>self-test</code> subcommand before pointing it at real hardware; it's correctness-validated and measures ~13M H/s on an RTX 4070 Super.</p>
-        <p class="prose mute">Full walkthrough, RPC reference, and known limitations are in the <a href="https://github.com/ondris-project/ondris#readme" target="_blank" rel="noopener">README</a> and <a href="https://github.com/ondris-project/ondris/blob/master/docs/ARCHITECTURE.md" target="_blank" rel="noopener">architecture notes</a>.</p>
-      </div>
-    </div>
+    <p class="note-callout" id="sparseNote" style="display:none;"><strong>Chain is short right now.</strong> This testnet's difficulty is calibrated for GPU-scale mining (~13M H/s) — with no miner currently pointed at the public node, new blocks are rare. Run <code>ondris-miner</code> or <code>ondris-miner-gpu</code> against <code>51.89.226.44:8080</code> to help fill this in.</p>
   </div>
 </section>
 
 <footer>
   <div class="container footer-top">
     <div class="footer-brand">
-      <a href="#top" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
+      <a href="index.html" class="wordmark"><span class="glyph"><i></i><i></i><i></i></span>ONDRIS</a>
       <p>A GPU-mineable, ASIC-resistant proof-of-work chain built around memory bandwidth instead of raw compute. Unaudited testnet software — not investment advice.</p>
     </div>
     <div class="footer-col">
@@ -467,7 +398,7 @@ footer{ border-top:1px solid var(--wire); }
     <div class="footer-col">
       <h4>Network</h4>
       <ul>
-        <li><a href="stats.html">Live network stats →</a></li>
+        <li><a href="index.html">← Back to home</a></li>
         <li class="mono-line">Seed 51.89.226.44:30303</li>
         <li class="mono-line">RPC 51.89.226.44:8080</li>
         <li class="mono-line">Mainnet target 2026-07-25</li>
@@ -496,124 +427,217 @@ footer{ border-top:1px solid var(--wire); }
 })();
 
 (function(){
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var canvas = document.getElementById('grid');
-  var ctx = canvas.getContext('2d');
-  var dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var cell = 17, cols, rows, heat, wrap;
-  wrap = canvas.parentElement;
+  var RPC_BASE = 'http://51.89.226.44:8080';
+  var TARGET_BLOCK_TIME = 30; // seconds; matches config/testnet-genesis.json, not exposed via RPC today
+  var MAX_BLOCKS = 20;
 
-  function styleNum(name){
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  var elLastUpdated = document.getElementById('lastUpdated');
+  var elLiveDot = document.getElementById('liveDot');
+  var elHeight = document.getElementById('kpiHeight');
+  var elDiff = document.getElementById('kpiDiff');
+  var elPeers = document.getElementById('kpiPeers');
+  var elHashrate = document.getElementById('kpiHashrate');
+  var elHashrateSub = document.getElementById('kpiHashrateSub');
+  var elTip = document.getElementById('kpiTip');
+  var elChartWrap = document.getElementById('chartWrap');
+  var elChartEmpty = document.getElementById('chartEmpty');
+  var elChartSvg = document.getElementById('chartSvg');
+  var elChartLegend = document.getElementById('chartLegend');
+  var elTooltip = document.getElementById('chartTooltip');
+  var elTbody = document.getElementById('blocksTbody');
+  var elSparseNote = document.getElementById('sparseNote');
+
+  function fmtInt(n){ return Number(n).toLocaleString('en-US'); }
+  function shortHash(h){ return h ? (h.slice(0, 10) + '…' + h.slice(-6)) : '—'; }
+  function shortAddr(a){ return a && a.length > 16 ? (a.slice(0, 10) + '…' + a.slice(-4)) : (a || '—'); }
+
+  function fmtAge(sec){
+    if (sec < 60) return Math.max(0, Math.round(sec)) + 's ago';
+    if (sec < 3600) return Math.round(sec / 60) + 'm ago';
+    if (sec < 86400) return Math.round(sec / 3600) + 'h ago';
+    return Math.round(sec / 86400) + 'd ago';
   }
 
-  function resize(){
-    var w = wrap.clientWidth, h = wrap.clientHeight;
-    canvas.width = Math.floor(w * dpr);
-    canvas.height = Math.floor(h * dpr);
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    cols = Math.ceil(w / cell) + 1;
-    rows = Math.ceil(h / cell) + 1;
-    heat = new Float32Array(cols * rows);
-    if (reduceMotion) seedStatic();
+  function fmtHashrate(hps){
+    if (hps >= 1e12) return (hps / 1e12).toFixed(2) + ' TH/s';
+    if (hps >= 1e9) return (hps / 1e9).toFixed(2) + ' GH/s';
+    if (hps >= 1e6) return (hps / 1e6).toFixed(2) + ' MH/s';
+    if (hps >= 1e3) return (hps / 1e3).toFixed(2) + ' KH/s';
+    return Math.round(hps) + ' H/s';
   }
 
-  function idx(x,y){ return y*cols+x; }
-
-  function seedStatic(){
-    for (var i=0;i<Math.floor(cols*rows*0.05);i++){
-      heat[Math.floor(Math.random()*heat.length)] = Math.random()*0.6+0.2;
-    }
-  }
-
-  function spawnCluster(){
-    var cx = (Math.random()*cols)|0, cy = (Math.random()*rows)|0;
-    var n = 3 + ((Math.random()*4)|0);
-    var x = cx, y = cy;
-    for (var i=0;i<n;i++){
-      x = Math.min(cols-1, Math.max(0, x + ((Math.random()*3)|0) - 1));
-      y = Math.min(rows-1, Math.max(0, y + ((Math.random()*3)|0) - 1));
-      heat[idx(x,y)] = 1;
-    }
-  }
-
-  function spawnDistant(){
-    heat[idx((Math.random()*cols)|0, (Math.random()*rows)|0)] = 1;
-  }
-
-  var lastCluster = 0, lastDistant = 0, lastFrame = 0;
-
-  function draw(t){
-    if (reduceMotion){
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      renderCells();
-      return;
-    }
-    requestAnimationFrame(draw);
-    if (t - lastFrame < 33) return; // ~30fps cap
-    lastFrame = t;
-    if (t - lastCluster > 260){ spawnCluster(); lastCluster = t; }
-    if (t - lastDistant > 900){ spawnDistant(); lastDistant = t; }
-    for (var i=0;i<heat.length;i++){ heat[i] *= 0.925; }
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    renderCells();
-  }
-
-  function renderCells(){
-    var dim = styleNum('--grid-dim') || '100,100,100';
-    var hot = styleNum('--grid-hot') || '224,138,75';
-    var c = cell*dpr, gap = 2*dpr, size = c-gap;
-    for (var y=0;y<rows;y++){
-      for (var x=0;x<cols;x++){
-        var v = heat[idx(x,y)];
-        if (v < 0.03) continue;
-        var rgb = v > 0.5 ? hot : dim;
-        ctx.globalAlpha = Math.min(1, v*0.5 + (v>0.5?0.5:0.12));
-        ctx.fillStyle = 'rgb(' + rgb + ')';
-        if (v > 0.6){
-          ctx.shadowBlur = 8*dpr; ctx.shadowColor = 'rgba(' + hot + ',0.9)';
-        } else {
-          ctx.shadowBlur = 0;
-        }
-        ctx.fillRect(x*c+gap/2, y*c+gap/2, size, size);
-      }
-    }
-    ctx.globalAlpha = 1; ctx.shadowBlur = 0;
-  }
-
-  window.addEventListener('resize', resize);
-  resize();
-  if (reduceMotion){ renderCells(); } else { requestAnimationFrame(draw); }
-})();
-
-(function(){
-  var RPC = 'http://51.89.226.44:8080/chain/info';
-  var elHeight = document.getElementById('statHeight');
-  var elDiff = document.getElementById('statDiff');
-  var elPeers = document.getElementById('statPeers');
-  var dot = document.getElementById('liveDot');
-
-  function fmt(n){ return Number(n).toLocaleString('en-US'); }
-
-  function load(){
-    fetch(RPC, { mode:'cors' }).then(function(r){
-      if (!r.ok) throw new Error('bad response');
+  function fetchJson(path){
+    return fetch(RPC_BASE + path, { mode: 'cors' }).then(function(r){
+      if (!r.ok) throw new Error('bad response for ' + path);
       return r.json();
-    }).then(function(d){
-      elHeight.textContent = fmt(d.height);
-      elDiff.textContent = fmt(d.next_difficulty);
-      elPeers.textContent = fmt(d.peer_count);
-      elHeight.classList.remove('is-loading');
-      elDiff.classList.remove('is-loading');
-      elPeers.classList.remove('is-loading');
-      dot.classList.add('is-live');
-    }).catch(function(){
-      elHeight.textContent = 'n/a';
-      elDiff.textContent = 'n/a';
-      elPeers.textContent = 'n/a';
     });
   }
+
+  function renderChart(blocks){
+    // blocks: newest-first array of {height, timestamp}. Need consecutive
+    // pairs (both present) to compute an interval — a gap in the fetched
+    // range (shouldn't happen since we fetch a contiguous span, but never
+    // assume) just means one fewer bar rather than a wrong one.
+    var intervals = [];
+    for (var i = 0; i < blocks.length - 1; i++){
+      var newer = blocks[i], older = blocks[i + 1];
+      if (newer.height === older.height + 1){
+        intervals.push({ height: newer.height, seconds: newer.timestamp - older.timestamp });
+      }
+    }
+    intervals.reverse(); // oldest-first for left-to-right reading
+
+    if (intervals.length < 3){
+      elChartEmpty.style.display = '';
+      elChartSvg.style.display = 'none';
+      elChartLegend.style.display = 'none';
+      elChartEmpty.innerHTML = '<strong>Not enough blocks yet to chart block times.</strong> This testnet\'s difficulty targets GPU-scale mining, so blocks are infrequent without an active miner. Once a few more land, this fills in automatically — no placeholder data shown in the meantime.';
+      return;
+    }
+
+    elChartEmpty.style.display = 'none';
+    elChartSvg.style.display = '';
+    elChartLegend.style.display = '';
+
+    var W = 800, H = 220, padL = 34, padR = 8, padT = 14, padB = 28;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var maxVal = Math.max(TARGET_BLOCK_TIME * 1.4, Math.max.apply(null, intervals.map(function(d){ return d.seconds; })) * 1.15);
+    var n = intervals.length;
+    var slot = plotW / n;
+    var barW = Math.max(3, Math.min(28, slot * 0.6));
+
+    function y(v){ return padT + plotH - (v / maxVal) * plotH; }
+
+    var svg = '';
+    // gridline + axis labels (0 and target)
+    svg += '<line class="chart-ref-line" x1="' + padL + '" y1="' + y(0) + '" x2="' + (W - padR) + '" y2="' + y(0) + '" style="stroke-dasharray:none; stroke:var(--wire);"/>';
+    svg += '<text class="chart-axis-label" x="4" y="' + (y(0) + 4) + '">0s</text>';
+    svg += '<line class="chart-ref-line" x1="' + padL + '" y1="' + y(TARGET_BLOCK_TIME) + '" x2="' + (W - padR) + '" y2="' + y(TARGET_BLOCK_TIME) + '"/>';
+    svg += '<text class="chart-ref-label" x="4" y="' + (y(TARGET_BLOCK_TIME) - 4) + '">30s target</text>';
+
+    intervals.forEach(function(d, i){
+      var cx = padL + slot * i + slot / 2;
+      var barH = Math.max(2, (d.seconds / maxVal) * plotH);
+      var bx = cx - barW / 2;
+      var by = padT + plotH - barH;
+      svg += '<rect class="chart-bar" data-height="' + d.height + '" data-seconds="' + d.seconds.toFixed(1) +
+             '" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + barW.toFixed(1) + '" height="' + barH.toFixed(1) +
+             '" rx="2"><title>Block ' + d.height + ': ' + d.seconds.toFixed(1) + 's</title></rect>';
+      if (n <= 20 && (i % Math.ceil(n / 10) === 0 || i === n - 1)){
+        svg += '<text class="chart-axis-label" x="' + cx.toFixed(1) + '" y="' + (H - 6) + '" text-anchor="middle">#' + d.height + '</text>';
+      }
+    });
+
+    elChartSvg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    elChartSvg.innerHTML = svg;
+
+    var bars = elChartSvg.querySelectorAll('.chart-bar');
+    bars.forEach(function(bar){
+      bar.addEventListener('mousemove', function(e){
+        var rect = elChartWrap.getBoundingClientRect();
+        elTooltip.textContent = 'Block ' + bar.getAttribute('data-height') + ' — ' + bar.getAttribute('data-seconds') + 's';
+        elTooltip.style.left = (e.clientX - rect.left) + 'px';
+        elTooltip.style.top = (e.clientY - rect.top) + 'px';
+        elTooltip.classList.add('is-visible');
+      });
+      bar.addEventListener('mouseleave', function(){
+        elTooltip.classList.remove('is-visible');
+      });
+    });
+
+    return intervals;
+  }
+
+  function renderTable(blocks, chainHeight, nowSec){
+    if (!blocks.length){
+      elTbody.innerHTML = '<tr><td colspan="6" class="empty-note">No blocks found.</td></tr>';
+      return;
+    }
+    var rows = blocks.map(function(b){
+      var age = fmtAge(Math.max(0, nowSec - b.timestamp));
+      var isGenesis = b.height === 0;
+      return '<tr>' +
+        '<td class="mono num">' + b.height + (isGenesis ? '<span class="genesis-tag">genesis</span>' : '') + '</td>' +
+        '<td>' + age + '</td>' +
+        '<td class="mono" title="' + b.hash + '">' + shortHash(b.hash) + '</td>' +
+        '<td class="mono" title="' + b.miner + '">' + shortAddr(b.miner) + '</td>' +
+        '<td class="mono num">' + b.txCount + '</td>' +
+        '<td class="mono num">' + fmtInt(b.difficulty) + '</td>' +
+        '</tr>';
+    }).join('');
+    elTbody.innerHTML = rows;
+    elSparseNote.style.display = chainHeight < 10 ? '' : 'none';
+  }
+
+  function load(){
+    fetchJson('/chain/info').then(function(info){
+      elHeight.textContent = fmtInt(info.height);
+      elDiff.textContent = fmtInt(info.next_difficulty);
+      elPeers.innerHTML = info.peer_count > 0
+        ? '<span class="pill good">' + info.peer_count + ' connected</span>'
+        : '<span class="pill off">0 connected</span>';
+      elTip.textContent = shortHash(info.tip_hash);
+      elTip.setAttribute('title', info.tip_hash);
+      [elHeight, elDiff, elPeers, elTip].forEach(function(el){ el.classList.remove('is-loading'); });
+      elLiveDot.classList.add('is-live');
+      elLiveDot.classList.remove('is-down');
+      elLastUpdated.textContent = 'updated ' + new Date().toLocaleTimeString();
+
+      var topHeight = info.height;
+      var count = Math.min(MAX_BLOCKS, topHeight + 1);
+      var heights = [];
+      for (var h = topHeight; h > topHeight - count; h--) heights.push(h);
+
+      return Promise.all(heights.map(function(h){
+        return fetchJson('/block/height/' + h).then(function(b){
+          return {
+            height: b.header.height,
+            timestamp: b.header.timestamp,
+            prevHash: b.header.prev_hash,
+            miner: b.header.miner,
+            difficulty: b.header.difficulty,
+            txCount: b.transactions.length,
+          };
+        });
+      })).then(function(blocks){
+        var nowSec = Math.floor(Date.now() / 1000);
+        // /block/height/:h returns a block's PARENT hash (prev_hash), not
+        // its own — there's no dedicated "block hash" field. But each
+        // block's own hash is exactly the prev_hash the next-newer block
+        // already carries, and /chain/info gave us the tip's real hash
+        // directly — so every row in this contiguous, newest-first range
+        // can get its real hash from its neighbor, with nothing fabricated.
+        blocks.forEach(function(b, i){
+          b.hash = i === 0 ? info.tip_hash : blocks[i - 1].prevHash;
+        });
+
+        var validIntervals = [];
+        for (var j = 0; j < blocks.length - 1; j++){
+          if (blocks[j].height === blocks[j + 1].height + 1){
+            validIntervals.push(blocks[j].timestamp - blocks[j + 1].timestamp);
+          }
+        }
+        var avgInterval = validIntervals.length >= 3
+          ? validIntervals.reduce(function(a, b){ return a + b; }, 0) / validIntervals.length
+          : null;
+
+        var hashrate = info.next_difficulty / (avgInterval || TARGET_BLOCK_TIME);
+        elHashrate.textContent = fmtHashrate(hashrate);
+        elHashrate.classList.remove('is-loading');
+        elHashrateSub.textContent = avgInterval
+          ? ('from observed avg block time (' + avgInterval.toFixed(1) + 's over ' + validIntervals.length + ' blocks)')
+          : 'assuming the 30s target — not enough blocks yet for an observed rate';
+
+        renderChart(blocks);
+        renderTable(blocks, topHeight, nowSec);
+      });
+    }).catch(function(err){
+      elLastUpdated.textContent = 'could not reach the node (' + err.message + ')';
+      elLiveDot.classList.remove('is-live');
+      elLiveDot.classList.add('is-down');
+    });
+  }
+
   load();
   setInterval(load, 15000);
 })();

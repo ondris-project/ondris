@@ -197,6 +197,12 @@ p{ margin:0; }
   .stat-strip{ grid-template-columns:repeat(2,1fr); }
   .stat:nth-child(2){ border-right:none; }
 }
+.stat-strip-link{ position:relative; z-index:1; padding-block:.9rem; border-top:1px solid var(--wire); }
+.stat-strip-link a{
+  font-family:'Plex Mono',monospace; font-size:.8125rem; text-decoration:none;
+  color:var(--text-mute);
+}
+.stat-strip-link a:hover{ color:var(--accent); }
 
 /* ---------- sections ---------- */
 section{ padding-block:clamp(3.5rem,9vw,6.5rem); }
@@ -307,6 +313,7 @@ footer{ border-top:1px solid var(--wire); }
       <a href="#how">Algorithm</a>
       <a href="#status">Status</a>
       <a href="#get-started">Get started</a>
+      <a href="stats.html">Network ↗</a>
       <a class="primary" href="https://github.com/ondris-project/ondris" target="_blank" rel="noopener">Source ↗</a>
       <button class="theme-btn" id="themeBtn" aria-label="Toggle color theme" title="Toggle color theme">
         <svg id="themeIcon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
@@ -333,6 +340,7 @@ footer{ border-top:1px solid var(--wire); }
     <div class="stat"><span class="stat-label">Peers</span><span class="stat-value is-loading" id="statPeers">—</span></div>
     <div class="stat"><span class="stat-label">Block reward</span><span class="stat-value num">50 ONDR</span></div>
   </div>
+  <div class="container stat-strip-link"><a href="stats.html">Full network stats, block-by-block →</a></div>
 </header>
 
 <section id="how">
@@ -459,6 +467,7 @@ footer{ border-top:1px solid var(--wire); }
     <div class="footer-col">
       <h4>Network</h4>
       <ul>
+        <li><a href="stats.html">Live network stats →</a></li>
         <li class="mono-line">Seed 51.89.226.44:30303</li>
         <li class="mono-line">RPC 51.89.226.44:8080</li>
         <li class="mono-line">Mainnet target 2026-07-25</li>
